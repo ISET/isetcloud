@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pbrt
+spec:
+  template:
+    metadata:
+      name: pbrt
+    spec:
+      containers:
+      - name: pbrt
+        image: vistalab/pbrt
+        command: ["pbrt"]
+      restartPolicy: Never
