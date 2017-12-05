@@ -163,10 +163,13 @@ end
 if status
     initPath = getenv('PATH');
     kubePath = fullfile(getenv('HOME'),'google-cloud-sdk','bin');
+    gcloudPath = fullfile(getenv('HOME'),'google-cloud-sdk','path.bash.inc');
     if exist(fullfile(kubePath,'kubectl'),'file')
         fprintf('Adding %s to PATH.\n',kubePath);
         setenv('PATH', [kubePath,':',initPath]);
-        status = 0;
+        %status = 0;
+        cmd = system('source %s',gcloudPath);
+        [status,~] = system(cmd);
     else
         fprintf('Could not find kubectl on your system.\n');
         return;
