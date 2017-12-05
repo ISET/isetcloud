@@ -157,5 +157,22 @@ else
     error('Platform [%s] not supported.', computer);
     
 end
+%% Configure Matlab kubectl/gsutil/gcloud functions
+% check the path of kubectl
+[status, kubePath] = system('which kubectl');
+if status
+    initPath = getenv('PATH');
+    kubePath = fullfile(getenv('HOME'),'google-cloud-sdk','bin');
+    if exist(fullfile(kubePath,'kubectl'),'file')
+        fprintf('Adding %s to PATH.\n',kubePath);
+        setenv('PATH', [kubePath,':',initPath]);
+        status = 0;
+    else
+        fprintf('Could not find kubectl on your system.\n');
+        return;
+    end
+else
+    fprintf('Found kubectl at %s\n',kubePath');
+end
 
 end
