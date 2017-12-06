@@ -26,7 +26,27 @@ p.addOptional('debug', false, @islogical);
 p.parse(varargin{:})
 
 args = p.Results;
-
+%% Configure Matlab ENV for google SDK 
+[status, kubePath] = system('which kubectl');
+    if status
+        initPath = getenv('PATH');
+        kubePath = fullfile(getenv('HOME'),'google-cloud-sdk','bin');
+    if exist(fullfile(kubePath,'kubectl'),'file')
+        fprintf('Adding %s to PATH.\n',kubePath);
+        setenv('PATH', [kubePath,':',initPath]);
+        status = 0;
+    else
+        fprintf('Could not find kubectl on your system.\n');
+        return;
+    end
+else
+    fprintf('Found kubectl at %s\n',kubePath');
+    end
+    % Configure google SDK
+    gcloudPath = fullfile(getenv('HOME'),'google-cloud-sdk','path.bash.inc');
+    setenv('PATH', [kubePath,':',initPath]);
+    cmd = sprintf('source %s',gcloudPath);
+    system(cmd);
 %% Configure Matlab ENV for the machine
 
 % MAC OSX
@@ -138,6 +158,11 @@ if ismac
         error('Docker could not be configured: %s', result);
     end
     
+    % Configure Matlab kubectl/gsutil/gcloud functions
+    % check the path of kubectl
+    
+
+    
 % LINUX
 elseif isunix
     
@@ -156,26 +181,6 @@ elseif isunix
 else
     error('Platform [%s] not supported.', computer);
     
-end
-%% Configure Matlab kubectl/gsutil/gcloud functions
-% check the path of kubectl
-[status, kubePath] = system('which kubectl');
-if status
-    initPath = getenv('PATH');
-    kubePath = fullfile(getenv('HOME'),'google-cloud-sdk','bin');
-    gcloudPath = fullfile(getenv('HOME'),'google-cloud-sdk','path.bash.inc');
-    if exist(fullfile(kubePath,'kubectl'),'file')
-        fprintf('Adding %s to PATH.\n',kubePath);
-        setenv('PATH', [kubePath,':',initPath]);
-        %status = 0;
-        cmd = system('source %s',gcloudPath);
-        [status,~] = system(cmd);
-    else
-        fprintf('Could not find kubectl on your system.\n');
-        return;
-    end
-else
-    fprintf('Found kubectl at %s\n',kubePath');
 end
 
 end
