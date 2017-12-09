@@ -28,3 +28,9 @@ aliyun.ls(bname)
 %% Delete the bucket
 aliyun.bucketrm(bname)
 aliyun.ls
+
+%% Push a docker image
+
+%% Render a scene
+
+%% 

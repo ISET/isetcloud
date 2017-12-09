@@ -1,6 +1,6 @@
 function obj = init(obj, varargin )
 % Initialize the gcloud container and k8s cluster
-%
+% This function is included in the fucntion <gCloud>
 %
 % HB/ZL/BW Vistasoft, 2017
 
@@ -66,7 +66,7 @@ end
 %}
 
 %% To change:  Push the docker rendering image to the project
-
+% 
 % We probably want this as a separate command, like
 % gCloud.setDockerImage(...)
 [containerDir, containerName] = fileparts(obj.dockerImage);
@@ -80,9 +80,9 @@ cmd = sprintf('gcloud container images list --repository=%s | grep %s',container
 % the future.
 if isempty(result)
     % We need to copy the container to gcloud 
-    cmd = sprintf('docker pull hblasins/%s',containerName);
+    cmd = sprintf('docker pull %s/%s',obj.dockerAccount,containerName);
     system(cmd);
-    cmd = sprintf('docker tag hblasins/%s %s/%s',containerName, containerDir, containerName);
+    cmd = sprintf('docker tag %s/%s %s/%s',obj.dockerAccount,containerName, containerDir, containerName);
     system(cmd);
     cmd = sprintf('gcloud docker -- push %s/%s',containerDir, containerName);
     system(cmd);
