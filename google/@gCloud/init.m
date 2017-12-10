@@ -1,8 +1,28 @@
 function obj = init(obj, varargin )
-% Initialize the gcloud container and k8s cluster
-% This function is included in the fucntion <gCloud>
+% Initialize the gcloud container and k8s cluster to run a docker
+% image
+%
+% Syntax
+%    gCloud.init(...)
+%
+% Description
+%   This function sets up the k8s cluster on the google cloud
+%   platform. It uses the defaults (account, the docker image, the
+%   storage bucket) that are set when you first create the gCloud
+%   instance.  This function is called when you create the gCloud
+%   object.  It is not typically invoked on its own.
+%
+% Example
+%   
+% TODO
+%   ZL thinks we should be able to swap the container that we call
+%   easily by a separate call.  See note below.
 %
 % HB/ZL/BW Vistasoft, 2017
+
+% Example
+%{
+%}
 
 
 %% List the containers. 
@@ -24,7 +44,11 @@ if isempty(result)
             cmd, obj.minInstances, obj.maxInstances);
     end
     
+    tic; fprintf('Calling gcloud to create the k8s cluster %s ...',obj.clusterName)
     [~, result] = system(cmd);
+    fprintf('done\n'); toc;
+    
+    % Returned result
     fprintf('%s\n',result);
 end
 
@@ -38,11 +62,10 @@ system(cmd);
 
 %% Cleanup
 
-% A cleanup-job
 % The Container Cluster stores the completed jobs, and they use up
-% resources (disk space, memory). We are going to run a simple service that
-% periodically lists all succesfully completed jobs and removes them from
-% the engine.
+% resources (disk space, memory). We run a simple service that
+% periodically lists all succesfully completed jobs and removes them
+% from the engine.
 
 % Check if a namespace for a user exists, if it doesn't create one.
 cmd = sprintf('kubectl get namespaces | grep %s',obj.namespace);
@@ -52,18 +75,16 @@ if isempty(result)
     system(cmd);
 end
 
-%{
-
+% This is how you run the clean up
 % Create a cleanup job in the user namespace.
 cmd = sprintf('kubectl get jobs --namespace=%s | grep cleanup',obj.namespace);
 [~, result] = system(cmd);
 
-if isempty(strfind(result,'cleanup'))
+if isempty(strfind(result,'cleanup')) %#ok<STREMP>
     cmd = sprintf('kubectl run cleanup --limits cpu=100m --namespace=%s --restart=OnFailure --image=google/cloud-sdk -- /bin/bash -c ''while true; do echo "Starting"; kubectl delete jobs --namespace=%s $(kubectl get jobs --namespace=%s | awk ''"''"''$3=="1" {print $1}''"''"''); echo "Deleted jobs"; sleep 30; done''',...
         obj.namespace,obj.namespace,obj.namespace);
     system(cmd);
 end
-%}
 
 %% To change:  Push the docker rendering image to the project
 % 
@@ -87,8 +108,6 @@ if isempty(result)
     cmd = sprintf('gcloud docker -- push %s/%s',containerDir, containerName);
     system(cmd);
 end
-
-
 
 end
 

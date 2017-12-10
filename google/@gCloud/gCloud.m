@@ -2,9 +2,34 @@ classdef gCloud < handle
 % Interface from Matlab to Google Cloud Platform
 %
 % Syntax
-%   gcp = gCloud(...)
+%    gcp = gCloud(...)
 %
-% ZL/BW 
+% Description
+%   This function sets up a k8s cluster on the google cloud platform.
+%   The arguments set up various defaults (account, the docker image,
+%   the storage bucket). 
+%
+% See also s_gCloud.m
+%
+% TODO
+%   ZL thinks we should be able to swap the container that we call
+%   easily by a separate call.  See note below.s
+%
+% HB/ZL/BW Vistasoft, 2017
+
+% Example
+%{
+% Initialization example from s_gCloud
+
+ dockerAccount= 'hblasins';
+ dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v2-spectral-gcloud';
+ cloudBucket = 'gs://primal-surfer-140120.appspot.com';
+ gcp = gCloud('dockerAccount',dockerAccount,...
+    'dockerImage',dockerImage,...
+    'clusterName','happyRendering',...
+    'cloudBucket',cloudBucket);
+%}
+
 
     properties (GetAccess=public, SetAccess=public)
         
@@ -23,16 +48,16 @@ classdef gCloud < handle
         clusterName  = 'rtb4';
         zone         = 'us-central1-a';
         instanceType = 'n1-highcpu-32';
-        minInstances = 1;
-        maxInstances = 10;
-        preemptible  = true;
-        autoscaling  = true;
-        namespace    = '';
+        minInstances = 1;     %
+        maxInstances = 10;    %
+        preemptible  = true;  %
+        autoscaling  = true;  %
+        namespace    = '';    % 
         
         dockerImage  = '';
         dockerAccount= '';
         
-        targets;
+        targets;    % What is this?
         
     end
     
@@ -42,17 +67,21 @@ classdef gCloud < handle
         function obj = gCloud(varargin)
             
             p = inputParser;
-            p.addOptional('provider','Google',@ishcar);
-            p.addOptional('clusterName','rtb4',@ischar);
-            p.addOptional('zone','us-central1-a',@ischar);
-            p.addOptional('instanceType','n1-highcpu-32',@ischar);
-            p.addOptional('minInstances',1,@isnumeric);
-            p.addOptional('maxInstances',10,@isnumeric);
-            p.addOptional('preemptible',true,@islogical);
-            p.addOptional('autoscaling',true,@islogical);
-            p.addOptional('cloudBucket','',@ischar);
-            p.addOptional('dockerImage','',@ischar);
             
+            % ieParamFormat goes here.  Force everything to lower
+            % case and no spaces
+            p.addParameter('provider','Google',@ischar);
+            p.addParameter('clusterName','rtb4',@ischar);
+            p.addParameter('zone','us-central1-a',@ischar);
+            p.addParameter('instanceType','n1-highcpu-32',@ischar);
+            p.addParameter('minInstances',1,@isnumeric);
+            p.addParameter('maxInstances',10,@isnumeric);
+            p.addParameter('preemptible',true,@islogical);
+            p.addParameter('autoscaling',true,@islogical);
+            p.addParameter('cloudBucket','',@ischar);
+            p.addParameter('dockerImage','',@ischar);
+            p.addParameter('dockerAccount','',@ischar);
+
             p.parse(varargin{:});
             
             obj.provider     = p.Results.provider;
@@ -65,12 +94,14 @@ classdef gCloud < handle
             obj.autoscaling  = p.Results.autoscaling;
             obj.cloudBucket  = p.Results.cloudBucket;
             obj.dockerImage  = p.Results.dockerImage;
-            
+            obj.dockerAccount  = p.Results.dockerAccount;
+
             % Call the initialization function.
             obj.init();
             
             [~, obj.namespace] = system('echo -n $USER');
         end
+        
         % List contents in a bucket.
         function [result, status, cmd] = ls(obj,bucketname)
             if ieNotDefined('bucketname')
@@ -83,6 +114,7 @@ classdef gCloud < handle
             end
                 
         end
+        
         % Create a new bucket.
         function [result, status, cmd] = bucketCreate(obj,bucketname)
             if ieNotDefined('bucketname')
@@ -93,6 +125,7 @@ classdef gCloud < handle
                 [status, result] = system(cmd);
             end
         end
+        
         % Upload a folder or a file
         function [result, status, cmd] = upload(obj,local_dir,cloud_dir)
             %cloud_dir = fullfile(obj.bucket,cloud_dir);
@@ -105,64 +138,34 @@ classdef gCloud < handle
                 [status, result] = system(cmd);
             end
         end
+        
         % Remove a bucket
         function [result, status, cmd]=rm(obj,name)
             cmd = sprintf('gsutil rm -r %s',name);
             [status, result] = system(cmd);
         end
+        
         % Empty a bucket 
         function [result, status, cmd]=empty(obj,name)
             cmd = sprintf('gsutil rm  %s/**',name);
             [status, result] = system(cmd);
         end
+        
         % Download a folder or a file
         function [result, status, cmd] = download(obj,cloud_dir,local_dir)
-            cloud_dir = fullfile(obj.bucket,cloud_dir);
+            % cloud_dir = fullfile(obj.bucket,cloud_dir);
             cmd = sprintf('gsutil cp %s %s',cloud_dir,local_dir);
             [status, result] = system(cmd);
         end
-%         % Push the docker rendering image to the project
-%         function [result, status, cmd] = setDockerImage(obj,dockerAccount,dockerDir,dockerName)
-%         % Check whether you have the necessary container. 
-%         [containerDir, containerName] = fileparts(obj.dockerImage);
-%         cmd = sprintf('gcloud container images list --repository=%s | grep %s',containerDir, containerName);
-%         [status, result] = system(cmd);
-%         if ieNotDefined('dockerAccount')
-%             dAccount = 'hblasins';
-%         else
-%             dAccount = obj.dockerAccount;
-%         end
-%         % If you don't, it goes to work getting the container, tag it, and push it to
-%         % the cloud.  This should really be on the RenderToolbox4 docker hub account in
-%         % the future.
-%         if isempty(result)
-%             % We need to copy the container to gcloud 
-%             cmd = sprintf('docker pull %s/%s',dAccount,containerName);
-%             system(cmd);
-%             cmd = sprintf('docker tag %s/%s %s/%s',dAccount,containerName, containerDir, containerName);
-%             system(cmd);
-%             cmd = sprintf('gcloud docker -- push %s/%s',containerDir, containerName);
-%             system(cmd);
-%         end
-%         end
+        
         % Display current configuration
         function [result, status, cmd] = Configlist(obj)
-%             %list active account
-%             cmd = sprintf('gcloud auth lists');
-%             [status, result_auth]=system(cmd);
-            %list clusters
             cmd = sprintf('gcloud container clusters list');
             [~, result_clusters]=system(cmd);
-%             %list projects
-%             cmd = sprintf('gcloud projects list');
-%             [status, result_projects]=system(cmd);
-            % list all properties in your active configuration
             cmd = sprintf('gcloud config list');
             [status, result_configuration]=system(cmd);
             result = sprintf('%s,%s\n',result_configuration,result_clusters);
             fprintf(result);
         end
-
-
     end
 end
