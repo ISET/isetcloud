@@ -101,6 +101,10 @@ classdef gCloud < handle
             
             [~, obj.namespace] = system('echo -n $USER');
         end
+        function [result, status, cmd]=clusterRm(obj,clusterName)
+            cmd = sprintf('gcloud container clusters delete %s --zone=%s',clusterName,obj.zone); 
+            [status,result]= system(cmd);
+        end
         
         % List contents in a bucket.
         function [result, status, cmd] = ls(obj,bucketname)
