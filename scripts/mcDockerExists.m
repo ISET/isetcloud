@@ -1,4 +1,4 @@
-function [dockerExists, status, result] = rtbDockerExists()
+function [dockerExists, status, result] = mcDockerExists()
 % Check whether we can find and use Docker.
 %
 % dockerExists = rtbDockerExists() returns true if Docker can be found on
