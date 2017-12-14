@@ -1,29 +1,32 @@
 %% Illustrate how to interact with the Google Cloud Platform
-%
-%
+% For render task, see s_mcRender.m
+% 
 % ZL, BW
 
 %% Add gcloud/gsutil/kubectl/docker functions in your matlab env.
 mcConfig;
 
 %%  Initialization
-
+tic;
 % Set up to run the PBRT V2 docker image
 dockerAccount= 'hblasins';
 dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v2-spectral-gcloud';
 cloudBucket = 'gs://primal-surfer-140120.appspot.com';
-
+clusterName = 'happyrendering';
 % We are initializing a k8s cluster up on our account.  Also, we are
 % setting the bucket where we store stuff.
 gcp = gCloud('dockerAccount',dockerAccount,...
     'dockerImage',dockerImage,...
     'cloudBucket',cloudBucket,...
-    'clusterName','happyRendering');
-
+    'clusterName',clusterName);
+toc;
 %% View google cloud configuration
 
 gcp.Configlist;
+%% Remove an existing cluster
 
+gcp.clusterRm(clusterName);
+gcp.Configlist;
 %% list contents in the default or specified bucket 
 
 gcp.ls  % Tells you which budkets you have
