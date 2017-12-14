@@ -11,13 +11,17 @@ function [ obj ] = uploadPBRT(obj, thisR, varargin )
 %  Zip all files except for the *.pbrt files from top level directory
 %
 % Example:
-%   gcp.upload(thisR)
+%   gcp.uploadPBRT(thisR)
+% NOTE:
+% If only *.pbrt files are used to render the scene, then there will be no
+% files to zip, an alternative command is used in this case.
 %
 % HB/ZL,  Vistasoft
 
 %%
 p = inputParser;
-p.addRequired(thisR,@(x)(isa(x,'recipe')));
+p.addRequired('recipe',@(x)(isa(x,'recipe')));
+%p.addRequired('recipe',@(x)(isequal(class(x),'recipe') || ischar(x)));
 p.addParameter('overwritezip',true,@islogical);
 p.parse(thisR,varargin{:});
 
@@ -26,8 +30,8 @@ overwritezip = p.Results.overwritezip;
 %% Package up the files for uploading to the k8s
 
 % The output file is the scene pbrt file
-[sceneFolder, sceneFile] = fileparts(thisR.get('output file'));
-
+%[sceneFolder, sceneFile] = fileparts(thisR.get('output file'));
+[sceneFolder, sceneFile] = fileparts(thisR.get('input file'));
 % The name of the folder containing the file
 [~, sceneName] = fileparts(sceneFolder);
 
@@ -53,19 +57,22 @@ if isempty(zipFiles) || length(zipFiles) > 1
     
     % Zip stuff excluding 
     cmd = sprintf('zip -r %s %s -x *.jpg *.png *.pbrt *.dat *.zip',zipFileName,allFiles);
-    system(cmd);
+    [status, ~]=system(cmd);
     
     cd(currentPath);  % Return
 end
 
 
 %%  Copy the local data to the k8s bucket storage
-
 cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
-
-cmd = sprintf('gsutil cp %s/%s %s/%s.pbrt %s/',sceneFolder,zipFileName,...
+zipFiles = dir(fullfile(sceneFolder,'*.zip'));
+if isempty(zipFiles)
+    cmd = sprintf('gsutil cp  %s/%s.pbrt %s/',sceneFolder,sceneFile,cloudFolder);
+else
+    cmd = sprintf('gsutil cp %s/%s %s/%s.pbrt %s/',sceneFolder,zipFileName,...
                                           sceneFolder,sceneFile,...
                                           cloudFolder);
+end
 system(cmd);
 
 target.camera = thisR.camera;
