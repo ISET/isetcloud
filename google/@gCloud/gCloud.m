@@ -108,20 +108,27 @@ classdef gCloud < handle
         
         % List contents in a bucket.
         function [result, status, cmd] = ls(obj,bucketname)
-            if ieNotDefined('bucketname')
+            if notDefined('bucketname')
                 cmd = sprintf('gsutil ls');
-                system(cmd);
+                [status,result] = system(cmd);
             else
                 d = bucketname;
                 cmd = sprintf('gsutil ls %s\n',d);
                 [status,result] = system(cmd);
             end
-                
+            
+            if ~isempty(result)
+                % Converts the char array return to a cell array
+                files = split(result);
+                ispresent = cellfun(@(s) ~isempty(s), files);
+                result = files(ispresent);
+            end
+            
         end
         
         % Create a new bucket.
         function [result, status, cmd] = bucketCreate(obj,bucketname)
-            if ieNotDefined('bucketname')
+            if notDefined('bucketname')
                 disp('Bucket name must be given')
             else
                 bname  = bucketname;
@@ -132,7 +139,8 @@ classdef gCloud < handle
         
         % Upload a folder or a file
         function [result, status, cmd] = upload(obj,local_dir,cloud_dir)
-            %cloud_dir = fullfile(obj.bucket,cloud_dir);
+            % cloud_dir = fullfile(obj.bucket,cloud_dir);
+            % 
             [~,~,ext] = fileparts(local_dir);
             if isempty(ext)
                 cmd = sprintf('gsutil -m cp -r %s %s',local_dir,cloud_dir);

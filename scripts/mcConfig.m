@@ -1,5 +1,9 @@
 function status = mcConfig(varargin)
-% Configure the Matlab kubernetes and gsutil functions and initiate the docker-machine
+% DEPRECATED
+%
+% See new methods in s_gCloud.m
+%s
+% Configure the Matlab environment for kubernetes, gsutil and the docker-machine
 %
 %   status = mcConfig(varargin) 
 % 

@@ -1,17 +1,34 @@
-%% Use gCloud to render a scene with PBRT V2
+%% Use gCloud to render multiple scenes with the PBRT V2 docker image
 %
-% Add Docker and google SDK config to Matlab Env;
-% Initialize your Gcloud cluster with customized configuration;
-% Find your scene directory and set pbrt rendering parameters;
-% Upload all the necessary files to the gcloud bucket;
-% Render your scene;
-% Download *.dat file and pass it to ISET;
+% This example shows how to render a PBRT scene on the kubernetes
+% cluster.  This code uses the pbrt2ISET tools.  We explain at the end
+% how render multiple scenes.
+%
+% Initialization
+%   Make sure Docker and google SDK config are correct for your Matlab Env;
+%   Initialize thr Gcloud cluster;
+%
+% Data definition
+%  Identify the local scene data
+%  Set pbrt rendering parameters;
+%  Upload the files to the gcloud bucket;
+%
+% Run the rendering job
+%
+% Download the result (*.dat files) and read them into ISET;
 % 
+% Related toolboxes:  pbrt2ISET, ISET, matlab2cloud
+%
 % NOTES:
 %  Cluster initialization time: around 5 mins.
 %
-%ZL
+% Typically, the renderings differ at least in their camera
+% parameters.  For example, they may differ in the camera position.
+% Also, they might differ in the lighting.  They may even have
+% different resources (geometry files, spds, brdfs, ...)
 %
+%ZL, Vistalab 2017
+
 %% Initialize ISET, Google cloud SDK and Docker
 
 ieInit;
@@ -29,8 +46,17 @@ gcp = gCloud('dockerAccount',dockerAccount,...
     'clusterName',clusterName,...
     'cloudBucket',cloudBucket);
 toc
-%% Clear current google task list if you want to assign a different job, ignore this for multi-tasks
+
+%% Data definition
+%
+% The pbrt2ISET code will create a 'target' variable.  This contains
+% the parameters 
+% The task list is stored in the variable 'targets'
+% if you want to assign a different job, ignore this for multi-tasks
+%
+
 gcp.targets =[];
+
 %% Find the scene directory
 
 fName = fullfile(mcRootPath,'data','teapot-area','teapot-area-light.pbrt');
