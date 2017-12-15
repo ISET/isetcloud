@@ -1,36 +1,35 @@
 classdef gCloud < handle
-% Interface from Matlab to Google Cloud Platform
-%
-% Syntax
-%    gcp = gCloud(...)
-%
-% Description
-%   This function sets up a k8s cluster on the google cloud platform.
-%   The arguments set up various defaults (account, the docker image,
-%   the storage bucket). 
-%
-% See also s_gCloud.m
-%
-% TODO
-%   ZL thinks we should be able to swap the container that we call
-%   easily by a separate call.  See note below.s
-%
-% HB/ZL/BW Vistasoft, 2017
+    % Interface from Matlab to Google Cloud Platform
+    %
+    % Syntax
+    %    gcp = gCloud(...)
+    %
+    % Description
+    %   This function sets up a k8s cluster on the google cloud platform.
+    %   The arguments set up various defaults (account, the docker image,
+    %   the storage bucket).
+    %
+    % See also s_gCloud.m
+    %
+    % TODO
+    %   ZL thinks we should be able to swap the container that we call
+    %   easily by a separate call.  See note below.
+    %
+    % HB/ZL/BW Vistasoft, 2017
+    
+    % Example
+    %{
+      % Initialization example from s_gCloud
 
-% Example
-%{
-% Initialization example from s_gCloud
-
- dockerAccount= 'hblasins';
- dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v2-spectral-gcloud';
- cloudBucket = 'gs://primal-surfer-140120.appspot.com';
- gcp = gCloud('dockerAccount',dockerAccount,...
-    'dockerImage',dockerImage,...
-    'clusterName','happyRendering',...
-    'cloudBucket',cloudBucket);
-%}
-
-
+        dockerAccount = 'hblasins';
+        dockerImage   = 'gcr.io/primal-surfer-140120/pbrt-v2-spectral-gcloud';
+        cloudBucket   = 'gs://primal-surfer-140120.appspot.com';
+        gcp = gCloud('dockerAccount',dockerAccount,...
+                     'dockerImage',dockerImage,...
+                     'clusterName','happyrendering',...
+                     'cloudBucket',cloudBucket);
+    %}
+    
     properties (GetAccess=public, SetAccess=public)
         
         % Local folder in the docker image
@@ -52,7 +51,7 @@ classdef gCloud < handle
         maxInstances = 10;    %
         preemptible  = true;  %
         autoscaling  = true;  %
-        namespace    = '';    % 
+        namespace    = '';    %
         
         dockerImage  = '';
         dockerAccount= '';
@@ -62,7 +61,7 @@ classdef gCloud < handle
     end
     
     methods
-       
+        
         % Constructor and gcloud cluster initialization.
         function obj = gCloud(varargin)
             
@@ -81,7 +80,7 @@ classdef gCloud < handle
             p.addParameter('cloudBucket','',@ischar);
             p.addParameter('dockerImage','',@ischar);
             p.addParameter('dockerAccount','',@ischar);
-
+            
             p.parse(varargin{:});
             
             obj.provider     = p.Results.provider;
@@ -95,14 +94,17 @@ classdef gCloud < handle
             obj.cloudBucket  = p.Results.cloudBucket;
             obj.dockerImage  = p.Results.dockerImage;
             obj.dockerAccount  = p.Results.dockerAccount;
+            
+            [status, obj.namespace] = system('echo -n $USER');
 
             % Call the initialization function.
             obj.init();
             
-            [~, obj.namespace] = system('echo -n $USER');
+            if status, error('Problem setting name space'); end
+            
         end
         function [result, status, cmd]=clusterRm(obj,clusterName)
-            cmd = sprintf('gcloud container clusters delete %s --zone=%s',clusterName,obj.zone); 
+            cmd = sprintf('gcloud container clusters delete %s --zone=%s',clusterName,obj.zone);
             [status,result]= system(cmd);
         end
         
@@ -140,7 +142,7 @@ classdef gCloud < handle
         % Upload a folder or a file
         function [result, status, cmd] = upload(obj,local_dir,cloud_dir)
             % cloud_dir = fullfile(obj.bucket,cloud_dir);
-            % 
+            %
             [~,~,ext] = fileparts(local_dir);
             if isempty(ext)
                 cmd = sprintf('gsutil -m cp -r %s %s',local_dir,cloud_dir);
@@ -157,7 +159,7 @@ classdef gCloud < handle
             [status, result] = system(cmd);
         end
         
-        % Empty a bucket 
+        % Empty a bucket
         function [result, status, cmd]=empty(obj,name)
             cmd = sprintf('gsutil rm  %s/**',name);
             [status, result] = system(cmd);
@@ -178,6 +180,40 @@ classdef gCloud < handle
             [status, result_configuration]=system(cmd);
             result = sprintf('%s,%s\n',result_configuration,result_clusters);
             fprintf(result);
+        end
+        
+        %% kubectl related methods
+        
+        % List the jobs in a specific name space or in all name spaces
+        function [result,status,cmd] = listJobs(obj,varargin)
+            % List all the jobs in all the name spaces
+            % Or we will parse the varargin and find one particular
+            % name space
+            p = inputParser;
+            varargin = ieParamFormat(varargin);
+            p.addParameter('namespace',obj.namespace,@ischar);
+            p.parse(varargin{:});
+            thisNameSpace = p.Results.namespace;
+            
+            if strcmp(thisNameSpace,'all')
+                cmd = sprintf('kubectl get jobs --all-namespaces');
+            else
+                cmd = sprintf('kubectl get jobs --namespace=%s',thisNameSpace);
+            end
+            
+            [status,result] = system(cmd);
+            if status
+                error('Name space read error\n%s\n',result);
+            end
+        end
+        
+        % List all the name spaces currently on the cluster
+        function [result,status,cmd] = listNames(obj,varargin)
+            cmd = sprintf('kubectl get namespaces');
+            [status,result] = system(cmd);
+            if status
+                error('Name space read error\n%s\n',result);
+            end
         end
     end
 end

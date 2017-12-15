@@ -57,29 +57,69 @@ toc
 
 gcp.targets =[];
 
-%% Find the scene directory
+%% Find the scene directory in pbrt2ISET
 
-fName = fullfile(mcRootPath,'data','teapot-area','teapot-area-light.pbrt');
+%{
+fName = fullfile(piRootPath,'data','teapot-area','teapot-area-light.pbrt');
 thisR = piRead(fName);
 thisR.set('camera','pinhole');
 thisR.set('rays per pixel',32);
 thisR.set('film resolution',256);
 [p,n,e] = fileparts(fName); 
-thisR.outputFile = fullfile(mcRootPath,'local',[n,e]);
+thisR.outputFile = fullfile(mcRootPath,'local','teapot',[n,e]);
 piWrite(thisR);
+%}
+%
+fname = fullfile(piRootPath,'data','ChessSet','chessSet.pbrt');
+if ~exist(fname,'file'), error('File not found'); end
+
+% Read the main scene pbrt file.  Return it as a recipe
+thisR = piRead(fname);
+from = thisR.get('from');
+
+%%Default is a relatively low resolution (256).
+thisR.set('camera','pinhole');
+thisR.set('from',from + [0 0 100]);  % First left/right, 2nd moved camera closer and to the right 
+thisR.set('film resolution',256);
+thisR.set('rays per pixel',128);
+
+%% Set up Docker 
+
+[p,n,e] = fileparts(fname); 
+thisR.outputFile = fullfile(mcRootPath,'local','chess',[n,e]);
+piWrite(thisR);
+%}
 
 %% Upload appropriately
 
 gcp.uploadPBRT(thisR);
+% gcp.ls(fullfile(gcp.cloudBucket,'wandell','chessSet'))
 
-%% Invoke the render
+%% Add the new PBRT rendering target with necessary information
+
+% After the upload, the target slot has the information needed to
+% render
+gcp.targets
+addPBRTTarget(obj,thisR);
+gcp.targets
+
+%% This invokes the PBRT-V2 docker image
 gcp.render();
 
 %% Return the data
-scene   = gcp.downloadPBRT(thisR);
+scene = [];
+while isempty(scene)
+    try
+        scene   = gcp.downloadPBRT(thisR);
+        disp('Data downloaded');
+    catch
+        pause(5);
+    end
+end
 scene_1 = scene{1};
 
 % Show it in ISET
 vcAddObject(scene_1); sceneWindow;
+sceneSet(scene,'gamma',0.5); 
 
 %%
