@@ -52,24 +52,27 @@ for t=1:length(obj.targets)
     % Or maybe it did start and we print this anyway
     fprintf('%s\n',result);
     
-    %% Learn about who is active.  The result is a json file
-    % We might move this checking type function out into another
-    % routine that monitors how we are doing.
-    
-    %     cmd = sprintf('kubectl get pods -o json --namespace=%s',obj.namespace);
-    %     [status, result] = system(cmd);
-    %     if status
-    %         warning('Did not read pds correctly');
-    %     end
-    %
-    %     % Kubernetes uses pod to be a group of 'containers'.  I am not
-    %     % sure what containers are, maybe 'workers' or processes or
-    %     % something. (BW).
-    %     result = jsondecode(result);
-    %     cmd    = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,result.items(end).metadata.name);
-    %     [status, result] = system(cmd);
-    %     if status, warning('Log not returned correctly\n'); end
-    %     fprintf('%s\n',result);
 end
 
 end
+
+
+%% Learn about who is active.  The result is a json file
+% We might move this checking type function out into another
+% routine that monitors how we are doing.
+
+%     cmd = sprintf('kubectl get pods -o json --namespace=%s',obj.namespace);
+%     [status, result] = system(cmd);
+%     if status
+%         warning('Did not read pds correctly');
+%     end
+%
+%     % Kubernetes uses pod to be a group of 'containers'.  I am not
+%     % sure what containers are, maybe 'workers' or processes or
+%     % something. (BW).
+%     result = jsondecode(result);
+%     cmd    = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,result.items(end).metadata.name);
+%     [status, result] = system(cmd);
+%     if status, warning('Log not returned correctly\n'); end
+%     fprintf('%s\n',result);
+

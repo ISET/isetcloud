@@ -1,8 +1,8 @@
-function cloudFolder = uploadPBRT(obj, thisR, varargin )
+function [cloudFolder,zipFileName] = uploadPBRT(obj, thisR, varargin )
 % Upload a pbrt scene directory for rendering on the cluster
 %
 % Syntax
-%   cloudFolder = gcp.uploadPBRT(thisR, ...)
+%   [cloudFolder,zipFileName] = gcp.uploadPBRT(thisR, ...)
 %
 % Input
 %   thisR:  A render recipe.
@@ -48,11 +48,18 @@ function cloudFolder = uploadPBRT(obj, thisR, varargin )
 %%
 p = inputParser;
 
+varargin = ieParamFormat(varargin);  % Allow spaces and capitalization
+
 p.addRequired('recipe',@(x)(isa(x,'recipe')));
 p.addParameter('overwritezip',true,@islogical);
+p.addParameter('uploadzip',true,@islogical);
+p.addParameter('zipfilename','',@ischar);
+
 p.parse(thisR,varargin{:});
 
-overwritezip = p.Results.overwritezip;
+overwritezip = p.Results.overwritezip;  % This refers to the local zip
+uploadzip    = p.Results.uploadzip;     % This refers to the cloud zip
+zipFileName  = p.Results.zipfilename;     % This refers to the cloud zip
 
 %% Package up the files for uploading to the k8s
 
@@ -64,8 +71,14 @@ else
     [sceneFolder, sceneName] = fileparts(pbrtScene);
 end
 
-% We will make a zip file of the whole folder
-zipFileName = fullfile(sceneFolder,[sceneName,'.zip']);
+% We will make a zip file of the whole folder.  If it wasn't passed,
+% use this as the default
+if isempty(zipFileName)
+    % Always based on the input file, not the output file.
+    pbrtScene = thisR.get('input file');
+    [~, sceneName] = fileparts(pbrtScene);
+    zipFileName = [sceneName,'.zip'];
+end
 
 if exist(zipFileName,'file') && ~overwritezip
     % Skip zipping
@@ -86,7 +99,7 @@ else
     % Zip recursively but excluding certain file types and any other
     % zip files that might have been put here.
     fprintf('Zipping into %s\n',zipFileName);
-    cmd = sprintf('zip -r %s %s -x *.jpg *.png *.pbrt *.dat renderings/* *.zip',zipFileName,allFiles);
+    cmd = sprintf('zip -r %s %s -x *.jpg *.png *.pbrt renderings/* *.zip',zipFileName,allFiles);
     status = system(cmd);
     
     % When there are no resource files, the zip file is empty
@@ -101,14 +114,15 @@ end
 %%  Copy the local data to the k8s bucket storage
 
 cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
-if isempty(zipFileName)
-    % There are no zip files.  We only copy the pbrt scene file
-    cmd = sprintf('gsutil cp  %s %s/',thisR.get('input file'),...
+if isempty(zipFileName) || ~uploadzip
+    % Either no zip file or we are told not to upload the zip.
+    % So we only copy the pbrt scene file
+    cmd = sprintf('gsutil cp  %s %s/',thisR.get('output file'),...
                                       cloudFolder);
 else
     % Copy the zip file and the pbrt file
     cmd = sprintf('gsutil cp %s %s %s/',  zipFileName,...
-                                          thisR.get('input file'),...
+                                          thisR.get('output file'),...
                                           cloudFolder);
 end
 

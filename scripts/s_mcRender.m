@@ -83,10 +83,12 @@ thisR.set('from',from + [0 0 100]);  % First left/right, 2nd moved camera closer
 thisR.set('film resolution',256);
 thisR.set('rays per pixel',128);
 
-%% Set up Docker 
+% Set up data for upload
+outputDir = fullfile(mcRootPath,'local','chess');
+if ~exist(outputDir,'dir'), mkdir(outputDir); end
 
 [p,n,e] = fileparts(fname); 
-thisR.outputFile = fullfile(mcRootPath,'local','chess',[n,e]);
+thisR.outputFile = fullfile(outputDir,[n,e]);
 piWrite(thisR);
 %}
 
@@ -99,9 +101,12 @@ gcp.uploadPBRT(thisR);
 
 % After the upload, the target slot has the information needed to
 % render
-gcp.targets
-addPBRTTarget(obj,thisR);
-gcp.targets
+if ~isempty(gcp.targets)
+    fprintf('%d current targets\n',length(gcp.targets));
+end
+
+addPBRTTarget(gcp,thisR);
+fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
 %% This invokes the PBRT-V2 docker image
 gcp.render();
@@ -120,6 +125,44 @@ scene_1 = scene{1};
 
 % Show it in ISET
 vcAddObject(scene_1); sceneWindow;
-sceneSet(scene,'gamma',0.5); 
+sceneSet(scene,'gamma',1); 
+
+%%  Now, change the lookat (twice) and render all three
+
+% Camera position
+from = thisR.get('from');
+
+dFrom = [-20 0 0; 0 0 0 ; 20 0 0];
+% Make a get to get the base file name and directory name from the get
+outputFile = thisR.get('input file');
+[p,n,e] = fileparts(outputFile);
+gcp.targets = [];
+files = cell(size(dFrom,1),1);
+
+for ii=1:size(dFrom,1)
+    thisR.set('from',from + dFrom(ii,:));
+    files{ii} = fullfile(p,[sprintf('%s-%d',n,ii),e]);
+    thisR.outputFile = files{ii};
+    piWrite(thisR,'overwrite resources',false);
+    
+    if ii == 1, [cloudFolder,zipFileName] = gcp.uploadPBRT(thisR);
+    else,       gcp.uploadPBRT(thisR,'upload zip',false,'overwrite zip',false);
+    end
+    
+    addPBRTTarget(gcp,thisR);
+end
+
+%% Confirm the upload
+gcp.ls(cloudFolder)
 
 %%
+gcp.render();
+
+%%
+gcp.listJobs
+
+%%
+% gcp.rm('gs://primal-surfer-140120.appspot.com/wandell/chessSet/chessSet-2-1.pbrt');
+
+
+
