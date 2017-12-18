@@ -215,5 +215,18 @@ classdef gCloud < handle
                 error('Name space read error\n%s\n',result);
             end
         end
+        function [result,status,cmd] = listPods(obj)
+                cmd = sprintf('kubectl get pods -o json --namespace=%s',obj.namespace);
+                [status, result] = system(cmd);
+                if status
+                    warning('Did not read pds correctly');
+                end
+        end
+        function [result, status,cmd] = displog(obj,podname)
+                cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
+                [status, result] = system(cmd);
+                if status, warning('Log not returned correctly\n'); end
+                fprintf('%s\n',result);
+        end
     end
 end
