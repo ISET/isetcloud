@@ -40,13 +40,15 @@ tic
 dockerAccount= 'hblasins';
 dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v2-spectral-gcloud';
 cloudBucket = 'gs://primal-surfer-140120.appspot.com';
-clusterName = 'happyrendering';
+clusterName = 'pbrtrendering';
+zone         = 'us-west1-a';    %'us-central1-a';
+instanceType = 'n1-highcpu-32';
 gcp = gCloud('dockerAccount',dockerAccount,...
     'dockerImage',dockerImage,...
     'clusterName',clusterName,...
-    'cloudBucket',cloudBucket);
+    'cloudBucket',cloudBucket,'zone',zone,'instanceType',instanceType);
 toc
-
+gcp.Configlist
 %% Data definition
 %
 % The pbrt2ISET code will create a 'target' variable.  This contains
@@ -155,7 +157,7 @@ end
 %% Confirm the upload
 gcp.ls(cloudFolder)
 
-%%
+%% 
 gcp.render();
 
 %%

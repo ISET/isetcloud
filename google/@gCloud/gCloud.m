@@ -103,8 +103,12 @@ classdef gCloud < handle
             if status, error('Problem setting name space'); end
             
         end
-        function [result, status, cmd]=clusterRm(obj,clusterName)
-            cmd = sprintf('gcloud container clusters delete %s --zone=%s',clusterName,obj.zone);
+        function [result, status, cmd]=clusterRm(obj,clusterName,zone)
+            if notDefined('zone')
+                cmd = sprintf('gcloud container clusters delete %s --zone=%s',clusterName,obj.zone);
+            else
+                cmd = sprintf('gcloud container clusters delete %s --zone=%s',clusterName,zone);
+            end
             [status,result]= system(cmd);
         end
         
@@ -174,12 +178,27 @@ classdef gCloud < handle
         
         % Display current configuration
         function [result, status, cmd] = Configlist(obj)
-            cmd = sprintf('gcloud container clusters list');
+            cmd = sprintf('gcloud container clusters list --format=json');
             [~, result_clusters]=system(cmd);
-            cmd = sprintf('gcloud config list');
+            result_clusters=jsondecode(result_clusters);
+            fields = {'addonsConfig','clusterIpv4Cidr','currentMasterVersion',...
+                'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
+                'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
+                'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth','nodeConfig','locations'};
+            result_clusters= rmfield(result_clusters,fields);
+            result_clusters=orderfields(result_clusters, {'name', 'zone', 'status','createTime','currentNodeCount'});
+            cmd = sprintf('gcloud config list --format=json');
             [status, result_configuration]=system(cmd);
-            result = sprintf('%s,%s\n',result_configuration,result_clusters);
-            fprintf(result);
+            result_configuration=jsondecode(result_configuration);
+            
+            result_clusters =struct2table(result_clusters);
+            result_configuration=result_configuration.core;
+            result_configuration=rmfield(result_configuration,'disable_usage_reporting');
+            
+            disp(result_configuration);
+            disp(result_clusters);
+            %result = sprintf('%s,%s\n',result_configuration,result_clusters);
+            %fprintf(result);
         end
         
         %% kubectl related methods
@@ -216,13 +235,17 @@ classdef gCloud < handle
             end
         end
         function [result,status,cmd] = listPods(obj)
-                cmd = sprintf('kubectl get pods -o json --namespace=%s',obj.namespace);
+                cmd = sprintf('kubectl get pods --namespace=%s',obj.namespace);
                 [status, result] = system(cmd);
                 if status
                     warning('Did not read pds correctly');
                 end
         end
-        function [result, status,cmd] = displog(obj,podname)
+        function [result,status,cmd] = discribePod(obj,podname)
+            cmd = sprintf('kubectl describe %s --namespace=%s',podname,obj.namespace);
+            [status, result] = system(cmd);
+        end
+        function [result, status,cmd] = podlogs(obj,podname)
                 cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
                 [status, result] = system(cmd);
                 if status, warning('Log not returned correctly\n'); end
