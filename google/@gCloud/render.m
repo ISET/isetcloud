@@ -26,9 +26,9 @@ for t=1:length(obj.targets)
     % We delete any jobs with the current name.
     kubeCmd = sprintf('kubectl delete job --namespace=%s %s',obj.namespace,jobName);
     [status, result] = system(kubeCmd);
-    if status
-        warning('No job named %s in the name space\n%s',jobName,result);
-    end
+    %     if status
+    %         warning('No job named %s in the name space\n%s',jobName,result);
+    %     end
 
     % This is the number of permissible cores
     % Find the first position with a dash

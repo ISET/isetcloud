@@ -1,30 +1,51 @@
-function [ isetObj ] = downloadPBRT( obj, thisR,varargin )
-% Download data from gcloud bucket to local, and pass the *.dat file to IEST;
+function isetObj = downloadPBRT( obj, thisR, varargin )
+% Download data from gcloud bucket, returning *.dat files as ISET objects
 % 
 % Syntax:
 %  gcp.downloadPBRT(thisR);
 %  
-%Input
-%   scene:  A render recipe.
+% Input (required)
+%   thisR:  A render recipe.
 %
+% Inputs (optional)
 %
+% Return
+%  isetObj - a cell array of ISET scene or oi (depending on the recipe
+%            optics)
 %
-% ZL
+% ZL, Vistalab 2017
+%
+% See also: piRender
+
 %%
 isetObj = cell(1,length(obj.targets));
 
+% We return a file for each of the gcloud targets
 for t=1:length(obj.targets)
     
+    % This is where the data started
     [targetFolder]  = fileparts(thisR.get('outputfile'));
+    
+    % The targets slot contains the fullpath to the output on the
+    % cloud
     [remoteFolder, remoteFile] = fileparts(obj.targets(t).remote);
     
-    cmd = sprintf('gsutil cp %s/renderings/%s.dat %s/%s.dat',remoteFolder,remoteFile,targetFolder,remoteFile);
+    % Command to download from cloud to local directory
+    cmd = sprintf('gsutil cp %s/renderings/%s.dat %s/renderings/%s.dat',...
+        remoteFolder,remoteFile,targetFolder,remoteFile);
+    
+    % Do it
     [status, result] = system(cmd);
+    if status
+        disp(result)
+    end
     
-
+    % Convert the dat file to an ISET format
     outFile = sprintf('%s/%s.dat',targetFolder,remoteFile);
-    photons = piReadDAT(outFile, 'maxPlanes', 31);
     
+    % This code should be a separate function, and be shared with
+    % piRender.
+    photons = piReadDAT(outFile, 'maxPlanes', 31);
     
     ieObjName = sprintf('%s-%s',remoteFile,datestr(now,'mmm-dd,HH:MM'));
     if strcmp(obj.targets(t).camera.subtype,'perspective')

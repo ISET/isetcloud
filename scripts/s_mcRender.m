@@ -48,7 +48,7 @@ gcp = gCloud('dockerAccount',dockerAccount,...
     'clusterName',clusterName,...
     'cloudBucket',cloudBucket,'zone',zone,'instanceType',instanceType);
 toc
-gcp.Configlist
+gcp.Configlist;
 %% Data definition
 %
 % The pbrt2ISET code will create a 'target' variable.  This contains
@@ -86,7 +86,7 @@ thisR.set('film resolution',256);
 thisR.set('rays per pixel',128);
 
 % Set up data for upload
-outputDir = fullfile(mcRootPath,'local','chess');
+outputDir = fullfile(piRootPath,'local','chess');
 if ~exist(outputDir,'dir'), mkdir(outputDir); end
 
 [p,n,e] = fileparts(fname); 
@@ -94,9 +94,12 @@ thisR.outputFile = fullfile(outputDir,[n,e]);
 piWrite(thisR);
 %}
 
-%% Upload appropriately
+%% Upload to the bucket attached to pbrtrendering
 
+% This first zips all the files into a single file. Then the zip file
+% and the critical pbrt scene file is uploaded to the bucket.
 gcp.uploadPBRT(thisR);
+
 % gcp.ls(fullfile(gcp.cloudBucket,'wandell','chessSet'))
 
 %% Add the new PBRT rendering target with necessary information
@@ -133,38 +136,59 @@ sceneSet(scene,'gamma',1);
 
 % Camera position
 from = thisR.get('from');
+dFrom = zeros(6,3);
+dFrom(:,1) = linspace(-20,15,6);
 
-dFrom = [-20 0 0; 0 0 0 ; 20 0 0];
-% Make a get to get the base file name and directory name from the get
-outputFile = thisR.get('input file');
-[p,n,e] = fileparts(outputFile);
+% Clear the target operations
 gcp.targets = [];
-files = cell(size(dFrom,1),1);
 
+% Get the basename and extension
+basename = thisR.get('input base name');
+ext = '.pbrt';
+outdir = fileparts(thisR.outputFile);
+%% Upload the pbrt scene files
+
+% These will be the names of the various pbrt scene files
+files = cell(size(dFrom,1),1);
 for ii=1:size(dFrom,1)
+    
+    % Create the adjusted pbrt scene file
     thisR.set('from',from + dFrom(ii,:));
-    files{ii} = fullfile(p,[sprintf('%s-%d',n,ii),e]);
+    files{ii} = fullfile(outdir,[sprintf('%s-%d',basename,ii),ext]);
     thisR.outputFile = files{ii};
     piWrite(thisR,'overwrite resources',false);
     
+    % Upload just the scene file
     if ii == 1, [cloudFolder,zipFileName] = gcp.uploadPBRT(thisR);
     else,       gcp.uploadPBRT(thisR,'upload zip',false,'overwrite zip',false);
     end
     
+    % Add the new target operation
     addPBRTTarget(gcp,thisR);
 end
 
-%% Confirm the upload
+%% Confirm the uploaded pbrt scene files and zip with resources
+
 gcp.ls(cloudFolder)
 
-%% 
+%% Call the job scheduler
+
 gcp.render();
 
-%%
-gcp.listJobs
+%% Show the running jobs
 
-%%
-% gcp.rm('gs://primal-surfer-140120.appspot.com/wandell/chessSet/chessSet-2-1.pbrt');
+% Maybe we could use this method to check the jobs
+v = gcp.listJobs
 
+%%  The download checks the number of targets and downloads a file for each 
+scene = gcp.downloadPBRT(thisR);
+nTargets = length(gcp.targets);
+for ii=1:nTargets
+    vcAddObject(scene{ii});
+end
+sceneWindow;
+sceneSet(scene{ii},'gamma',1);
+
+%% Show it in ISET
 
 

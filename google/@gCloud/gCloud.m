@@ -178,6 +178,7 @@ classdef gCloud < handle
         
         % Display current configuration
         function [result, status, cmd] = Configlist(obj)
+            % List the cluster information from the gcloud container
             cmd = sprintf('gcloud container clusters list --format=json');
             [~, result_clusters]=system(cmd);
             result_clusters=jsondecode(result_clusters);
@@ -185,20 +186,27 @@ classdef gCloud < handle
                 'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
                 'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
                 'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth','nodeConfig','locations'};
-            result_clusters= rmfield(result_clusters,fields);
-            result_clusters=orderfields(result_clusters, {'name', 'zone', 'status','createTime','currentNodeCount'});
+            result_clusters = rmfield(result_clusters,fields);
+            result_clusters = orderfields(result_clusters, {'name', 'zone', 'status','createTime','currentNodeCount'});
+            
             cmd = sprintf('gcloud config list --format=json');
             [status, result_configuration]=system(cmd);
             result_configuration=jsondecode(result_configuration);
             
-            result_clusters =struct2table(result_clusters);
-            result_configuration=result_configuration.core;
-            result_configuration=rmfield(result_configuration,'disable_usage_reporting');
+            result_clusters = struct2table(result_clusters);
+            result_configuration = result_configuration.core;
+            if isfield(result_configuration,'disable_usage_reporting')
+                result_configuration = rmfield(result_configuration,'disable_usage_reporting');
+            end
             
+            % Display (always?)
             disp(result_configuration);
             disp(result_clusters);
-            %result = sprintf('%s,%s\n',result_configuration,result_clusters);
-            %fprintf(result);
+            
+            % Configure result
+            result.configuration = result_configuration;
+            result.clusters = result_clusters;
+            
         end
         
         %% kubectl related methods

@@ -107,22 +107,31 @@ else
         warning('No files zipped. Assuming empty.');
         zipFileName = '';
     end
-    %
+    zipFileFullPath = fullfile(sceneFolder,zipFileName);
+    if ~exist(zipFileFullPath,'file')
+        error('Something wrong in producing the zip file %s\n',zipFileFullPath);
+    end
+    
     cd(currentPath);  % Return
 end
 
 %%  Copy the local data to the k8s bucket storage
 
+pbrtSceneFile = thisR.get('output file');
+if ~exist(pbrtSceneFile,'file')
+    error('Could not find pbrt scene file %s\n',pbrtSceneFile);
+end
+
 cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
 if isempty(zipFileName) || ~uploadzip
     % Either no zip file or we are told not to upload the zip.
     % So we only copy the pbrt scene file
-    cmd = sprintf('gsutil cp  %s %s/',thisR.get('output file'),...
+    cmd = sprintf('gsutil cp  %s %s/',pbrtSceneFile,...
                                       cloudFolder);
 else
     % Copy the zip file and the pbrt file
-    cmd = sprintf('gsutil cp %s %s %s/',  zipFileName,...
-                                          thisR.get('output file'),...
+    cmd = sprintf('gsutil cp %s %s %s/',  zipFileFullPath,...
+                                          pbrtSceneFile,...
                                           cloudFolder);
 end
 
