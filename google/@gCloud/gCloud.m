@@ -233,6 +233,22 @@ classdef gCloud < handle
                 error('Name space read error\n%s\n',result);
             end
         end
+        function [result, status, cmd] = checkJobs(obj, varargin)
+            p = inputParser;
+            varargin = ieParamFormat(varargin);
+            p.addParameter('namespace',obj.namespace,@ischar);
+            p.parse(varargin{:});
+            thisNameSpace = p.Results.namespace;
+            cmd = sprintf('kubectl get jobs --namespace=%s -o json',thisNameSpace);
+            [status,result] = system(cmd);
+            if status
+                error('Name space read error\n%s\n',result);
+            end
+            result = jsondecode(result);
+            NumofJobs = sum(~cellfun(@isempty,{result.items}));
+            NumofJobs = NumofJobs - 1;
+            fprintf('%d job to be done', NumofJobs);
+        end
         
         % List all the name spaces currently on the cluster
         function [result,status,cmd] = listNames(obj,varargin)

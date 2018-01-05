@@ -115,8 +115,13 @@ fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
 %% This invokes the PBRT-V2 docker image
 gcp.render();
+% Check jobs status
+gcp.checkJobs('namespace',gcp.namespace);
 
 %% Return the data
+
+
+
 scene = [];
 while isempty(scene)
     try
@@ -178,7 +183,7 @@ gcp.render();
 %% Show the running jobs
 
 % Maybe we could use this method to check the jobs
-v = gcp.listJobs
+v = gcp.listJobs;
 
 %%  The download checks the number of targets and downloads a file for each 
 scene = gcp.downloadPBRT(thisR);
