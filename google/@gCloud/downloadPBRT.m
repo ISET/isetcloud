@@ -41,7 +41,7 @@ for t=1:length(obj.targets)
     end
     
     % Convert the dat file to an ISET format
-    outFile = sprintf('%s/%s.dat',targetFolder,remoteFile);
+    outFile = sprintf('%s/renderings/%s.dat',targetFolder,remoteFile);
     
     % This code should be a separate function, and be shared with
     % piRender.
