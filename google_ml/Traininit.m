@@ -11,34 +11,34 @@ if ~strcmp(result, obj.ProjectName)
 end
 %Upload data to cloudbucket
 
-cmd = sprintf('gsutil cp %s gs://%s/%s/data/train.record', obj.Train_record, obj.cloudBucket,obj.namespace);
-% [status, result]=system(cmd);
-cmd = sprintf('gsutil cp %s gs://%s/%s/data/val.record', obj.Val_record,obj.cloudBucket,obj.namespace);
+cmd = sprintf('gsutil cp %s gs://%s/%s/%s/data/train.record', obj.Train_record, obj.cloudBucket,obj.namespace,obj.Task);
 [status, result]=system(cmd);
-cmd = sprintf('gsutil cp %s gs://%s/%s/data/label_map.pbtxt', obj.Label_map,obj.cloudBucket,obj.namespace);
+cmd = sprintf('gsutil cp %s gs://%s/%s/%s/data/val.record', obj.Val_record,obj.cloudBucket,obj.namespace,obj.Task);
 [status, result]=system(cmd);
-cmd = sprintf('gsutil cp %s/model.ckpt.* gs://%s/%s/data', obj.Pretrain_model, obj.cloudBucket,obj.namespace);
+cmd = sprintf('gsutil cp %s gs://%s/%s/%s/data/label_map.pbtxt', obj.Label_map,obj.cloudBucket,obj.namespace,obj.Task);
+[status, result]=system(cmd);
+cmd = sprintf('gsutil cp %s/model.ckpt.* gs://%s/%s/%s/data', obj.Pretrain_model, obj.cloudBucket,obj.namespace,obj.Task);
 [status, result]=system(cmd);
 %Edit the faster_rcnn_resnet101_pets.config template. Please note that there
 %are multiple places where PATH_TO_BE_CONFIGURED needs to be set to the working dir.
-cmd1=sprintf(' "s|PATH_TO_BE_CONFIGURED|"gs://%s/%s"/data|g" %s',...
-obj.cloudBucket,obj.namespace,obj.NetworkConfig);
+cmd1=sprintf(' "s|PATH_TO_BE_CONFIGURED|"gs://%s/%s/%s"/data|g" %s',...
+obj.cloudBucket,obj.namespace,obj.Task,obj.NetworkConfig);
 cmd=strcat('sed -i ''','''',cmd1);
 [status, result]=system(cmd);
 [~,network]=fileparts(obj.NetworkConfig);
-cmd = sprintf('gsutil cp %s gs://%s/%s/data/%s.config', obj.NetworkConfig,...
-    obj.cloudBucket,obj.namespace,network);
+cmd = sprintf('gsutil cp %s gs://%s/%s/%s/data/%s.config', obj.NetworkConfig,...
+    obj.cloudBucket,obj.namespace,obj.Task,network);
 [status, result]=system(cmd);
 
 % package Tensorflow Object Detection code
 currentpath = pwd;
-if ~exist(fullfile(gCT.TFmodels,'dist/object_detection-0.1.tar.gz'), 'file')
+if ~exist(fullfile(obj.TFmodels,'dist/object_detection-0.1.tar.gz'), 'file')
     cd (obj.TFmodels);
     cmd = sprintf('python setup.py sdist');
     [status, result]=system(cmd);
     cd(currentpath);
 end
-if ~exist(fullfile(gCT.TFmodels,'slim/dist/slim-0.1.tar.gz'), 'file')
+if ~exist(fullfile(obj.TFmodels,'slim/dist/slim-0.1.tar.gz'), 'file')
     cd (obj.TFmodels);
     cd slim;
     cmd = sprintf('python slim/setup.py sdist');

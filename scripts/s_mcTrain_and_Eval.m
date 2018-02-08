@@ -19,10 +19,10 @@ NetworkConfig = fullfile(TFmodels,'object_detection/samples/configs/ssd_mobilene
 % path to GPU configuration file
 GPUconfig=fullfile(TFmodels,'object_detection/samples/cloud/cloud.yml');
 % prepare your train.record and val.record files
-Train_record = '/Users/eugeneliu/Downloads/sRGB_aeMean_0.4_EV_0.0_test.record';
-Val_record = '/Users/eugeneliu/Downloads/sRGB_aeMean_0.4_EV_0.0_trainval.record';
+Train_record = '/Users/eugeneliu/Desktop/sRGB_aeMean_0.4_EV_mix_trainval.record';
+Val_record = '/Users/eugeneliu/Desktop/sRGB_aeMean_0.4_EV_mix_test.record';
 Label_map = '/Users/eugeneliu/Downloads/MultiObject-Pinhole_label_map.pbtxt';
-
+Task = 'sRBG_mix';
 %paht to pre-trained model
 Pretrain_model = '/Users/eugeneliu/git_repo/tensorflow/pretrained_models/ssd_mobilenet_v1_coco_2017_11_17';
 
@@ -30,7 +30,7 @@ Pretrain_model = '/Users/eugeneliu/git_repo/tensorflow/pretrained_models/ssd_mob
 gCT = gCloudTrain('ProjectName',ProjectName,'cloudBucket',cloudBucket,...
     'TFmodels',TFmodels,'NetworkConfig',NetworkConfig,...
     'GPUconfig',GPUconfig,'Train_record', Train_record,'Val_record',Val_record,...
-    'Label_map',Label_map,'Pretrain_model',Pretrain_model);
+    'Label_map',Label_map,'Pretrain_model',Pretrain_model,'Task',Task);
 %% Train
 gCT.train();
 

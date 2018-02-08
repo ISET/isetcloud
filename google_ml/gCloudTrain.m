@@ -12,6 +12,7 @@ classdef gCloudTrain < handle
        Label_map      ='';
        namespace      ='';
        Pretrain_model ='';
+       Task           ='';
        
    end
     
@@ -30,21 +31,21 @@ classdef gCloudTrain < handle
             p.addParameter('Val_record','',@ischar);
             p.addParameter('Label_map','',@ischar);
             p.addParameter('Pretrain_model','',@ischar);
-
+            p.addParameter('Task','',@ischar);
             
             p.parse(varargin{:});
             
-            obj.ProjectName  = p.Results.ProjectName;
-            obj.cloudBucket  = p.Results.cloudBucket;
-            obj.region       = p.Results.region;
-            obj.TFmodels     = p.Results.TFmodels;
-            obj.NetworkConfig= p.Results.NetworkConfig;
+            obj.ProjectName   = p.Results.ProjectName;
+            obj.cloudBucket   = p.Results.cloudBucket;
+            obj.region        = p.Results.region;
+            obj.TFmodels      = p.Results.TFmodels;
+            obj.NetworkConfig = p.Results.NetworkConfig;
             obj.GPUconfig       = p.Results.GPUconfig;
-            obj.Train_record = p.Results.Train_record;
-            obj.Val_record   = p.Results.Val_record;
-            obj.Label_map    = p.Results.Label_map;
-            obj.Pretrain_model = p.Results.Pretrain_model;
-            
+            obj.Train_record  = p.Results.Train_record;
+            obj.Val_record    = p.Results.Val_record;
+            obj.Label_map     = p.Results.Label_map;
+            obj.Pretrain_model= p.Results.Pretrain_model;
+            obj.Task          = p.Results.Task;
             [~, obj.namespace] = system('echo -n $USER');
 
             Traininit(obj);
@@ -55,9 +56,9 @@ classdef gCloudTrain < handle
         function [result, status, cmd] = train(obj)
             [~,Network]=fileparts(obj.NetworkConfig);
             rand = num2str(randi(1000));
-            cmd = sprintf('gcloud ml-engine jobs submit training %s_object_detection_%s --runtime-version 1.2 --job-dir=gs://%s/%s/train --packages %s/dist/object_detection-0.1.tar.gz,%s/slim/dist/slim-0.1.tar.gz --module-name object_detection.train --region %s --config %s -- --train_dir=gs://%s/%s/train --pipeline_config_path=gs://%s/%s/data/%s.config',...
-                obj.namespace,rand,obj.cloudBucket,obj.namespace,obj.TFmodels,obj.TFmodels,...
-                obj.region,obj.GPUconfig,obj.cloudBucket,obj.namespace,obj.cloudBucket,obj.namespace, Network);
+            cmd = sprintf('gcloud ml-engine jobs submit training %s_object_detection_%s --runtime-version 1.2 --job-dir=gs://%s/%s/%s/train --packages %s/dist/object_detection-0.1.tar.gz,%s/slim/dist/slim-0.1.tar.gz --module-name object_detection.train --region %s --config %s -- --train_dir=gs://%s/%s/%s/train --pipeline_config_path=gs://%s/%s/%s/data/%s.config',...
+                obj.Task,rand,obj.cloudBucket,obj.namespace,obj.Task,obj.TFmodels,obj.TFmodels,...
+                obj.region,obj.GPUconfig,obj.cloudBucket,obj.namespace,obj.Task,obj.cloudBucket,obj.namespace,obj.Task, Network);
             [status, result]=system(cmd);
             fprintf(result);
         end
@@ -65,9 +66,9 @@ classdef gCloudTrain < handle
         function [result, status, cmd] = eval(obj)
             [~,Network]=fileparts(obj.NetworkConfig);
             rand = num2str(randi(1000));
-            cmd = sprintf('gcloud ml-engine jobs submit training %s_object_detection_eval_%s --runtime-version 1.2 --job-dir=gs://%s/%s/train --packages %s/dist/object_detection-0.1.tar.gz,%s/slim/dist/slim-0.1.tar.gz --module-name object_detection.eval --region %s --scale-tier BASIC_GPU -- --checkpoint_dir=gs://%s/%s/train --eval_dir=gs://%s/%s/eval --pipeline_config_path=gs://%s/%s/data/%s.config',...
-                obj.namespace,rand,obj.cloudBucket,obj.namespace,obj.TFmodels,obj.TFmodels,...
-                obj.region,obj.cloudBucket,obj.namespace,obj.cloudBucket,obj.namespace,obj.cloudBucket,obj.namespace, Network);
+            cmd = sprintf('gcloud ml-engine jobs submit training %s_object_detection_eval_%s --runtime-version 1.2 --job-dir=gs://%s/%s/%s/train --packages %s/dist/object_detection-0.1.tar.gz,%s/slim/dist/slim-0.1.tar.gz --module-name object_detection.eval --region %s --scale-tier BASIC_GPU -- --checkpoint_dir=gs://%s/%s/%s/train --eval_dir=gs://%s/%s/%s/eval --pipeline_config_path=gs://%s/%s/%s/data/%s.config',...
+                obj.Task,rand,obj.cloudBucket,obj.namespace,obj.Task,obj.TFmodels,obj.TFmodels,...
+                obj.region,obj.cloudBucket,obj.namespace,obj.Task,obj.cloudBucket,obj.namespace,obj.Task,obj.cloudBucket,obj.namespace,obj.Task, Network);
             [status, result]=system(cmd);
             fprintf(result);
         end
@@ -75,7 +76,7 @@ classdef gCloudTrain < handle
         function [result, status, cmd] = monitor(obj)
             url = 'http://localhost:6006';%tensorboard.
             web(url,'-browser');
-            cmd = sprintf('tensorboard --logdir=gs://%s/%s',obj.cloudBucket,obj.namespace);
+            cmd = sprintf('tensorboard --logdir=gs://%s/%s/%s',obj.cloudBucket,obj.namespace,obj.Task);
             [status, result]=system(cmd);
 
         end
