@@ -11,23 +11,28 @@ if ~strcmp(result, obj.ProjectName)
 end
 %Upload data to cloudbucket
 
-cmd = sprintf('gsutil cp %s gs://%s/%s/%s/data/train.record', obj.Train_record, obj.cloudBucket,obj.namespace,obj.Task);
+cmd = sprintf('gsutil cp %s  %s/data/train.record', obj.Train_record, obj.Cloudfolder);
 [status, result]=system(cmd);
-cmd = sprintf('gsutil cp %s gs://%s/%s/%s/data/val.record', obj.Val_record,obj.cloudBucket,obj.namespace,obj.Task);
+cmd = sprintf('gsutil cp %s  %s/data/val.record', obj.Val_record,obj.Cloudfolder);
 [status, result]=system(cmd);
-cmd = sprintf('gsutil cp %s gs://%s/%s/%s/data/label_map.pbtxt', obj.Label_map,obj.cloudBucket,obj.namespace,obj.Task);
+cmd = sprintf('gsutil cp %s  %s/data/label_map.pbtxt', obj.Label_map,obj.Cloudfolder);
 [status, result]=system(cmd);
-cmd = sprintf('gsutil cp %s/model.ckpt.* gs://%s/%s/%s/data', obj.Pretrain_model, obj.cloudBucket,obj.namespace,obj.Task);
+cmd = sprintf('gsutil cp %s/model.ckpt.*  %s/data', obj.Pretrain_model, obj.Cloudfolder);
 [status, result]=system(cmd);
 %Edit the faster_rcnn_resnet101_pets.config template. Please note that there
 %are multiple places where PATH_TO_BE_CONFIGURED needs to be set to the working dir.
-cmd1=sprintf(' "s|PATH_TO_BE_CONFIGURED|"gs://%s/%s/%s"/data|g" %s',...
-obj.cloudBucket,obj.namespace,obj.Task,obj.NetworkConfig);
+cmd1=sprintf(' "s|PATH_TO_BE_CONFIGURED|"%s"/data|g" %s',...
+obj.Cloudfolder,obj.NetworkConfig);
 cmd=strcat('sed -i ''','''',cmd1);
 [status, result]=system(cmd);
 [~,network]=fileparts(obj.NetworkConfig);
-cmd = sprintf('gsutil cp %s gs://%s/%s/%s/data/%s.config', obj.NetworkConfig,...
-    obj.cloudBucket,obj.namespace,obj.Task,network);
+cmd = sprintf('gsutil cp %s  %s/data/%s.config', obj.NetworkConfig,...
+    obj.Cloudfolder,network);
+[status, result]=system(cmd);
+% Edit the path back to undefined status.
+cmd1=sprintf(' "s|%s/data|"PATH_TO_BE_CONFIGURED"|g" %s',...
+obj.Cloudfolder,obj.NetworkConfig);
+cmd=strcat('sed -i ''','''',cmd1);
 [status, result]=system(cmd);
 
 % package Tensorflow Object Detection code
