@@ -78,9 +78,12 @@ classdef gCloudTrain < handle
         
         function [result, status, cmd] = monitor(obj)
             url = 'http://localhost:6006';%tensorboard.
-            web(url,'-browser');
-            cmd = sprintf('tensorboard --logdir= %s',obj.Cloudfolder);
-            [status, result]=system(cmd);
+            web(url,'-browser'); 
+            fprintf('Execute this command to your system terminal: \n')
+            cmd = sprintf('tensorboard --logdir=%s \n',obj.Cloudfolder);
+            fprintf(cmd);
+           
+            %[status, result]=system(cmd);
 
         end
 %         function [result, status, cmd] = checkpoint(obj)
