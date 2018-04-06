@@ -80,7 +80,7 @@ if isempty(zipFileName)
     zipFileName = [sceneName,'.zip'];
 end
 
-if exist(zipFileName,'file') && ~overwritezip
+if exist(fullfile(sceneFolder,zipFileName),'file') && ~overwritezip
     % Skip zipping
 else
     currentPath = pwd; chdir(sceneFolder);
@@ -130,7 +130,7 @@ if isempty(zipFileName) || ~uploadzip
                                       cloudFolder);
 else
     % Copy the zip file and the pbrt file
-    cmd = sprintf('gsutil cp %s %s %s/',  zipFileFullPath,...
+    cmd = sprintf('gsutil cp %s %s %s/',  fullfile(sceneFolder,zipFileName),...
                                           pbrtSceneFile,...
                                           cloudFolder);
 end
