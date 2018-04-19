@@ -56,6 +56,9 @@ classdef gCloud < handle
         dockerImage  = '';
         dockerAccount= '';
         
+        % Depth map flag
+        renderDepth = false;
+        
         targets;    % What is this?
         
     end
@@ -94,6 +97,7 @@ classdef gCloud < handle
             obj.cloudBucket  = p.Results.cloudBucket;
             obj.dockerImage  = p.Results.dockerImage;
             obj.dockerAccount  = p.Results.dockerAccount;
+            obj.renderDepth = p.Results.renderDepth;
             
             [status, obj.namespace] = system('echo -n $USER');
 

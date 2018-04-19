@@ -61,6 +61,17 @@ overwritezip = p.Results.overwritezip;  % This refers to the local zip
 uploadzip    = p.Results.uploadzip;     % This refers to the cloud zip
 zipFileName  = p.Results.zipfilename;     % This refers to the cloud zip
 
+%% Write out the depth file, if required
+if(obj.renderDepth)
+    
+    depthRecipe = piRecipeConvertToMetadata(thisR,'metadata','depth');
+    
+    % Always overwrite the depth file, but don't copy over the whole directory
+    piWrite(depthRecipe,'overwritepbrtfile',true,...
+        'overwritelensfile',false,...
+        'overwriteresources',false);
+end
+
 %% Package up the files for uploading to the k8s
 
 % These are the PBRT scene file and resources
