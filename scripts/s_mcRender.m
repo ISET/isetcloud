@@ -37,11 +37,11 @@ if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud 
 
 %% Initialize your cluster
 tic
-dockerAccount= 'hblasins';
-dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v2-spectral-gcloud';
+dockerAccount= 'vistalab';
+dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v3-spectral-gcloud';
 cloudBucket = 'gs://primal-surfer-140120.appspot.com';
-clusterName = 'pbrtrendering';
-zone         = 'us-west1-a';    %'us-central1-a';
+clusterName = 'zhenyi';
+zone         = 'us-central1-a';    %'us-central1-a';
 instanceType = 'n1-highcpu-32';
 gcp = gCloud('dockerAccount',dockerAccount,...
     'dockerImage',dockerImage,...
@@ -72,11 +72,11 @@ thisR.outputFile = fullfile(mcRootPath,'local','teapot',[n,e]);
 piWrite(thisR);
 %}
 %
-fname = fullfile(piRootPath,'data','ChessSet','chessSet.pbrt');
+fname = fullfile(piRootPath,'data','V3','StopSign','stop.pbrt');
 if ~exist(fname,'file'), error('File not found'); end
 
 % Read the main scene pbrt file.  Return it as a recipe
-thisR = piRead(fname);
+thisR = piRead(fname,'version',3);
 from = thisR.get('from');
 
 %%Default is a relatively low resolution (256).
@@ -86,7 +86,7 @@ thisR.set('film resolution',256);
 thisR.set('rays per pixel',128);
 
 % Set up data for upload
-outputDir = fullfile(piRootPath,'local','chess');
+outputDir = fullfile(piRootPath,'local','stop');
 if ~exist(outputDir,'dir'), mkdir(outputDir); end
 
 [p,n,e] = fileparts(fname); 
@@ -113,10 +113,14 @@ end
 addPBRTTarget(gcp,thisR);
 fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
-%% This invokes the PBRT-V2 docker image
+%% This invokes the PBRT-V3 docker image
 gcp.render();
-% Check jobs status
-gcp.checkJobs('namespace',gcp.namespace);
+[~,~,~,podname] = gcp.Podslist();
+gcp.PodDescribe(podname{1})
+gcp.Podlog(podname{1});
+
+% Remove all jobs
+gcp.JobsRmAll();
 
 %% Return the data
 
@@ -134,7 +138,7 @@ end
 scene_1 = scene{1};
 
 % Show it in ISET
-vcAddObject(scene_1); sceneWindow;
+ieAddObject(scene_1); sceneWindow;
 sceneSet(scene,'gamma',1); 
 
 %%  Now, change the lookat (twice) and render all three
@@ -189,7 +193,7 @@ v = gcp.listJobs;
 scene = gcp.downloadPBRT(thisR);
 nTargets = length(gcp.targets);
 for ii=1:nTargets
-    vcAddObject(scene{ii});
+    ieAddObject(scene{ii});
 end
 sceneWindow;
 sceneSet(scene{ii},'gamma',1);

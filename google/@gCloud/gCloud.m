@@ -185,7 +185,7 @@ classdef gCloud < handle
             fields = {'addonsConfig','clusterIpv4Cidr','currentMasterVersion',...
                 'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
                 'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
-                'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth','nodeConfig','locations'};
+                'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth','nodeConfig','locations','subnetwork'};
             result_clusters = rmfield(result_clusters,fields);
             result_clusters = orderfields(result_clusters, {'name', 'zone', 'status','createTime','currentNodeCount'});
             
@@ -247,7 +247,7 @@ classdef gCloud < handle
             result = jsondecode(result);
             NumofJobs = sum(~cellfun(@isempty,{result.items}));
             NumofJobs = NumofJobs - 1;
-            fprintf('%d job to be done', NumofJobs);
+            fprintf('%d job to be done \n', NumofJobs);
         end
         
         % List all the name spaces currently on the cluster
@@ -258,22 +258,40 @@ classdef gCloud < handle
                 error('Name space read error\n%s\n',result);
             end
         end
-        function [result,status,cmd] = listPods(obj)
-                cmd = sprintf('kubectl get pods --namespace=%s',obj.namespace);
-                [status, result] = system(cmd);
+        function [result,status,cmd,pod] = Podslist(obj)
+                cmd = sprintf('kubectl get pods -a --namespace=%s -o json',obj.namespace);
+                [status, result_original] = system(cmd);
+                result = jsondecode(result_original);
+                if ~isempty(result.items)
+                for i=1:length(result.items)
+                podname= result.items.metadata.name;
+                fprintf('%s is %s \n', podname, result.items.status.phase)
+                pod{i}=podname;
+                end
+                else
+                    fprintf('No resources found\n')
+                
+                end
                 if status
                     warning('Did not read pds correctly');
                 end
         end
-        function [result,status,cmd] = discribePod(obj,podname)
-            cmd = sprintf('kubectl describe %s --namespace=%s',podname,obj.namespace);
+        function [result,status,cmd] = PodDescribe(obj,podname)
+            cmd = sprintf('kubectl describe pod %s --namespace=%s',podname,obj.namespace);
             [status, result] = system(cmd);
         end
-        function [result, status,cmd] = podlogs(obj,podname)
+        function [result, status,cmd] = Podlog(obj,podname)
                 cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
                 [status, result] = system(cmd);
                 if status, warning('Log not returned correctly\n'); end
                 fprintf('%s\n',result);
         end
+        function [result, status, cmd] = JobsRmAll(obj)
+            cmd = sprintf('kubectl delete jobs --all --namespace=%s',obj.namespace);
+                [status, result] = system(cmd);
+            if status, warning('Jobs are not correctly deleted\n'); end
+            fprintf('%s\n',result);
+        end
+            
     end
 end
