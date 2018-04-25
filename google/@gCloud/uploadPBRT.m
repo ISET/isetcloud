@@ -110,7 +110,7 @@ else
     % Zip recursively but excluding certain file types and any other
     % zip files that might have been put here.
     fprintf('Zipping into %s\n',zipFileName);
-    cmd = sprintf('zip -r %s %s -x *.jpg *.png *.pbrt renderings/* *.zip',zipFileName,allFiles);
+    cmd = sprintf('zip -r %s %s -x *.jpg *.pbrt renderings/* *.zip',zipFileName,allFiles);
     status = system(cmd);
     
     % When there are no resource files, the zip file is empty
@@ -129,6 +129,11 @@ end
 %%  Copy the local data to the k8s bucket storage
 
 pbrtSceneFile = thisR.get('output file');
+[p,f,~]= fileparts(pbrtSceneFile);
+f_materials = sprintf('%s_materials.pbrt',f);
+pbrtMaterialFile = fullfile(p,f_materials);
+f_geometry = sprintf('%s_geometry.pbrt',f);
+pbrtGeometryFile = fullfile(p,f_geometry);
 if ~exist(pbrtSceneFile,'file')
     error('Could not find pbrt scene file %s\n',pbrtSceneFile);
 end
@@ -150,6 +155,22 @@ end
 [status, result] = system(cmd);
 if status
     error('cp to cloud folder failed\n %s',result);
+end
+if exist(pbrtMaterialFile, 'file')
+    cmd = sprintf('gsutil cp  %s %s/',pbrtMaterialFile,...
+                                         cloudFolder);
+[status, result] = system(cmd);
+if status
+    error('Material file cp to cloud folder failed\n %s',result);
+end
+end
+if exist(pbrtGeometryFile, 'file')
+    cmd = sprintf('gsutil cp  %s %s/',pbrtGeometryFile,...
+                                         cloudFolder);
+[status, result] = system(cmd);
+if status
+    error('Geometry file cp to cloud folder failed\n %s',result);
+end
 end
 % obj.ls(cloudFolder)
 
