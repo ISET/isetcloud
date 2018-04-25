@@ -40,6 +40,25 @@ for t=1:length(obj.targets)
         disp(result)
     end
     
+    % Look for the corresponding depth file (if necessary)
+    if(obj.renderDepth)
+        cmd = sprintf('gsutil cp %s/renderings/%s_depth.dat %s/renderings/%s_depth.dat',...
+            remoteFolder,remoteFile,targetFolder,remoteFile);
+        
+        % Do it
+        [status, result] = system(cmd);
+        if status
+            disp(result)
+        else
+            warning('Could not download depth map: %s/renderings/%s_depth.dat',remoteFolder,remoteFile);
+        end
+        
+        % Read the downloaded depth file
+         depthOutFile = sprintf('%s/renderings/%s_depth.dat',targetFolder,remoteFile);
+         depthMap = piReadDAT(depthOutFile, 'maxPlanes', 31);
+         depthMap = depthMap(:,:,1);
+    end
+    
     % Convert the dat file to an ISET format
     outFile = sprintf('%s/renderings/%s.dat',targetFolder,remoteFile);
     

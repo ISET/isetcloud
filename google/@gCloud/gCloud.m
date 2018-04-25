@@ -83,6 +83,7 @@ classdef gCloud < handle
             p.addParameter('cloudBucket','',@ischar);
             p.addParameter('dockerImage','',@ischar);
             p.addParameter('dockerAccount','',@ischar);
+            p.addParameter('renderDepth',false,@islogical);
             
             p.parse(varargin{:});
             

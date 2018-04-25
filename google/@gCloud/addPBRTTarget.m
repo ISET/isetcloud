@@ -28,4 +28,16 @@ target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
 % Add this target to the targets already stored.
 obj.targets = cat(1,obj.targets,target);
 
+%% Add depth file if necessary
+if(obj.renderDepth)
+    
+    target.camera = thisR.camera;
+    target.local = pbrtScene;
+    target.remote = fullfile(cloudFolder,sprintf('%s_depth.pbrt',sceneName));
+    
+    % Add this target to the targets already stored.
+    obj.targets = cat(1,obj.targets,target);
+    
+end
+
 end
