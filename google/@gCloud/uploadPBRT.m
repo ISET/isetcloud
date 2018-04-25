@@ -156,6 +156,8 @@ end
 if status
     error('cp to cloud folder failed\n %s',result);
 end
+
+% Copy geometry and material files
 if exist(pbrtMaterialFile, 'file')
     cmd = sprintf('gsutil cp  %s %s/',pbrtMaterialFile,...
                                          cloudFolder);
@@ -171,7 +173,21 @@ if exist(pbrtGeometryFile, 'file')
 if status
     error('Geometry file cp to cloud folder failed\n %s',result);
 end
+
+%% Copy depth file
+if(obj.renderDepth)
+    
+    f_depth  = sprintf('%s_depth.pbrt',f);
+    pbrtDepthFile = fullfile(p,f_depth);
+    cmd = sprintf('gsutil cp  %s %s/',pbrtDepthFile,...
+        cloudFolder);
+    [status, result] = system(cmd);
+    if status
+        error('Depth file cp to cloud folder failed\n %s',result);
+    end
+    
 end
+
 % obj.ls(cloudFolder)
 
 

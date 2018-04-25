@@ -23,6 +23,13 @@ isetObj = cell(1,length(obj.targets));
 % We return a file for each of the gcloud targets
 for t=1:length(obj.targets)
     
+    if(obj.targets(t).depthFlag)
+        % We skip the depth map for now. Later when we encounter a radiance
+        % target we will look for the corresponding depth map and load it
+        % then. See below.
+        continue;
+    end
+        
     % This is where the data started
     [targetFolder]  = fileparts(thisR.get('outputfile'));
     
@@ -49,7 +56,6 @@ for t=1:length(obj.targets)
         [status, result] = system(cmd);
         if status
             disp(result)
-        else
             warning('Could not download depth map: %s/renderings/%s_depth.dat',remoteFolder,remoteFile);
         end
         

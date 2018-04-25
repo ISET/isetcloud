@@ -25,6 +25,9 @@ target.camera = thisR.camera;
 target.local = pbrtScene;
 target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
 
+ % Indicate if this target is a depth map or not. This is used to sort between returned targets when downloading. 
+target.depthFlag = 0;
+
 % Add this target to the targets already stored.
 obj.targets = cat(1,obj.targets,target);
 
@@ -34,7 +37,8 @@ if(obj.renderDepth)
     target.camera = thisR.camera;
     target.local = pbrtScene;
     target.remote = fullfile(cloudFolder,sprintf('%s_depth.pbrt',sceneName));
-    
+    target.depthFlag = 1;
+
     % Add this target to the targets already stored.
     obj.targets = cat(1,obj.targets,target);
     
