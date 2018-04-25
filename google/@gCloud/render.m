@@ -32,8 +32,8 @@ for t=1:length(obj.targets)
 
     % This is the number of permissible cores
     % Find the first position with a dash
-    str = split(obj.instanceType,'-');
-    nCores = str2double(str{3});
+    loc = strfind(obj.instanceType,'-');
+    nCores = str2double(obj.instanceType(loc(2)+1:end));
      
     % Run the shell script cloudRenderPBRT2ISET.sh on the cluster
     % The parameters to the shell script are 

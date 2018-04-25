@@ -79,6 +79,7 @@ if isempty(result)
     system(cmd);
 end
 
+%{
 % Check for an existing cleanup job in the user namespace.
 cmd = sprintf('kubectl get jobs --namespace=%s | grep cleanup',obj.namespace);
 [~, result] = system(cmd);
@@ -89,7 +90,7 @@ if isempty(strfind(result,'cleanup')) %#ok<STREMP>
         obj.namespace,obj.namespace,obj.namespace);
     system(cmd);
 end
-
+%}
 %% Push the docker image to the project
 
 % We probably want this as a separate command, like
