@@ -18,6 +18,7 @@ function isetObj = downloadPBRT( obj, thisR, varargin )
 % See also: piRender
 
 %%
+
 isetObj = cell(1,length(obj.targets));
 
 % We return a file for each of the gcloud targets
@@ -122,6 +123,10 @@ for t=1:length(obj.targets)
     
 end
 
+% Clear empty cells in isetObj that were created from depth map targets
+if(obj.renderDepth)
+    isetObj = isetObj(~cellfun('isempty',isetObj)) ;
+end
 
 end
 
