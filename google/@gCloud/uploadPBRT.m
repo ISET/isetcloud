@@ -10,7 +10,7 @@ function [cloudFolder,zipFileName] = uploadPBRT(obj, thisR, varargin )
 % Description
 %  Using the information in the render recipe (thisR), we find and zip
 %  the resource files.  The zip file is placed inside the data
-%  directory. 
+%  directory.
 %
 %  We then copy the zip file with the resources and the pbrt scene
 %  file (*.pbrt) to the gcp  bucket.
@@ -95,7 +95,7 @@ if exist(fullfile(sceneFolder,zipFileName),'file') && ~overwritezip
     % Skip zipping
 else
     currentPath = pwd; chdir(sceneFolder);
-
+    
     % List all the files in the scene folder
     %     if ~exist(sceneFolder,'dir')
     %     end
@@ -130,10 +130,7 @@ end
 
 pbrtSceneFile = thisR.get('output file');
 [p,f,~]= fileparts(pbrtSceneFile);
-f_materials = sprintf('%s_materials.pbrt',f);
-pbrtMaterialFile = fullfile(p,f_materials);
-f_geometry = sprintf('%s_geometry.pbrt',f);
-pbrtGeometryFile = fullfile(p,f_geometry);
+
 if ~exist(pbrtSceneFile,'file')
     error('Could not find pbrt scene file %s\n',pbrtSceneFile);
 end
@@ -143,12 +140,12 @@ if isempty(zipFileName) || ~uploadzip
     % Either no zip file or we are told not to upload the zip.
     % So we only copy the pbrt scene file
     cmd = sprintf('gsutil cp  %s %s/',pbrtSceneFile,...
-                                      cloudFolder);
+        cloudFolder);
 else
     % Copy the zip file and the pbrt file
     cmd = sprintf('gsutil cp %s %s %s/',  fullfile(sceneFolder,zipFileName),...
-                                          pbrtSceneFile,...
-                                          cloudFolder);
+        pbrtSceneFile,...
+        cloudFolder);
 end
 
 % Do the copy and check
@@ -157,21 +154,32 @@ if status
     error('cp to cloud folder failed\n %s',result);
 end
 
-% Copy geometry and material files
-if exist(pbrtMaterialFile, 'file')
+%% Copy geometry and material files
+
+% For materials and geometry we will use a wildcard. These files are
+% usually named after the original pbrt file name, and not scene file named
+% specific in iset3d. In the docker container we also copy over all
+% material and geometry files using a wildcard. This may not be the most
+% efficient way, but it ensures the file gets in there somehow. 
+pbrtMaterialFile = fullfile(p,'*_materials.pbrt');
+pbrtGeometryFile = fullfile(p,'*_geometry.pbrt');
+
+if(~isempty(dir(pbrtMaterialFile)))
     cmd = sprintf('gsutil cp  %s %s/',pbrtMaterialFile,...
-                                         cloudFolder);
-[status, result] = system(cmd);
-if status
-    error('Material file cp to cloud folder failed\n %s',result);
+        cloudFolder);
+    [status, result] = system(cmd);
+    if status
+        Warning('Material file cp to cloud folder failed\n %s',result);
+    end
 end
-end
-if exist(pbrtGeometryFile, 'file')
+
+if(~isempty(dir(pbrtGeometryFile)))
     cmd = sprintf('gsutil cp  %s %s/',pbrtGeometryFile,...
-                                         cloudFolder);
-[status, result] = system(cmd);
-if status
-    error('Geometry file cp to cloud folder failed\n %s',result);
+        cloudFolder);
+    [status, result] = system(cmd);
+    if status
+        error('Geometry file cp to cloud folder failed\n %s',result);
+    end
 end
 
 %% Copy depth file
