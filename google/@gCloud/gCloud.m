@@ -59,9 +59,17 @@ classdef gCloud < handle
         % Depth map flag
         renderDepth = false;
         
-        targets;    % What is this?
+        % Descriptor
+        % TL: An extra property for misc descriptors that we want
+        % to keep consistent with targets. I use it primarily to attach the
+        % sceneEye object to the gCloud object so that each target will have
+        % a corresponding sceneEye object. 
+        miscDescriptor = [];
+        
+        targets;    
         
     end
+    
     
     methods
         
