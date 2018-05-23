@@ -4,26 +4,26 @@ function obj = Traininit(obj, varargin )
 % check if you are under the right project
 cmd = sprintf('gcloud config get-value project');
 [~, result] = system(cmd);
-result = result(1:24);
+result = result(1:(length(result)-1));
 if ~strcmp(result, obj.ProjectName)
     cmd = sprintf('gcloud config set project %s',obj.ProjectName);
     system(cmd);
 end
-%Upload data to cloudbucket
+%% Upload data to cloudbucket
 
-cmd = sprintf('gsutil cp %s  %s/data/train.record', obj.Train_record, obj.Cloudfolder);
+cmd = sprintf('gsutil cp %s  %s/data/kitti_train.record', obj.Train_record, obj.Cloudfolder);
 [status, result]=system(cmd);
-if ~status, fprintf('%s uploaded as train.record \n',obj.Train_record);
+if ~status, fprintf('%s successfully uploaded \n',obj.Train_record);
 else
     fprintf('%s failed to upload \n',obj.Train_record)
 end
-cmd = sprintf('gsutil cp %s  %s/data/val.record', obj.Val_record,obj.Cloudfolder);
+cmd = sprintf('gsutil cp %s  %s/data/kitti_val.record', obj.Val_record,obj.Cloudfolder);
 [status, result]=system(cmd);
-if ~status,fprintf('%s successfully uploaded as val.record \n',obj.Val_record);
+if ~status,fprintf('%s successfully uploaded \n',obj.Val_record);
 else
     fprintf('%s failed to upload \n',obj.Val_record)
 end
-cmd = sprintf('gsutil cp %s  %s/data/label_map.pbtxt', obj.Label_map,obj.Cloudfolder);
+cmd = sprintf('gsutil cp %s  %s/data/kitti_label_map.pbtxt', obj.Label_map,obj.Cloudfolder);
 [status, result]=system(cmd);
 if ~status,fprintf('%s successfully uploaded \n',obj.Label_map);
 else
@@ -37,7 +37,7 @@ else
     fprintf('%s failed to upload \n',obj.Pretrain_model)
 end
     
-%Edit the faster_rcnn_resnet101_pets.config template. Please note that there
+%% Edit the faster_rcnn_resnet101_pets.config template. Please note that there
 %are multiple places where PATH_TO_BE_CONFIGURED needs to be set to the working dir.
 cmd1=sprintf(' "s|PATH_TO_BE_CONFIGURED|"%s"/data|g" %s',...
 obj.Cloudfolder,obj.NetworkConfig);
@@ -68,7 +68,7 @@ end
 if ~exist(fullfile(obj.TFmodels,'slim/dist/slim-0.1.tar.gz'), 'file')
     cd (obj.TFmodels);
     cd slim;
-    cmd = sprintf('python slim/setup.py sdist');
+    cmd = sprintf('python setup.py sdist');
     [status, result]=system(cmd);
     cd(currentpath);
 end

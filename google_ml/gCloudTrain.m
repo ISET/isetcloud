@@ -69,7 +69,7 @@ classdef gCloudTrain < handle
         function [result, status, cmd] = eval(obj)
             [~,Network]=fileparts(obj.NetworkConfig);
             rand = num2str(randi(1000));
-            cmd = sprintf('gcloud ml-engine jobs submit training %s_object_detection_eval_%s --runtime-version 1.2 --job-dir=%s/train --packages %s/dist/object_detection-0.1.tar.gz,%s/slim/dist/slim-0.1.tar.gz --module-name object_detection.eval --region %s --scale-tier BASIC_GPU -- --checkpoint_dir=%s/train --eval_dir=%s/eval --pipeline_config_path=%s/data/%s.config',...
+            cmd = sprintf('gcloud ml-engine jobs submit training %s_object_detection_eval_%s --runtime-version 1.2 --job-dir=%s/train --packages %s/dist/object_detection-0.1.tar.gz,/Users/zhenyiliu/git_repo/pycocotools-2.0.tar.gz,%s/slim/dist/slim-0.1.tar.gz --module-name object_detection.eval --region %s --scale-tier BASIC_GPU -- --checkpoint_dir=%s/train --eval_dir=%s/eval --pipeline_config_path=%s/data/%s.config',...
                 obj.Task,rand,obj.Cloudfolder,obj.TFmodels,obj.TFmodels,...
                 obj.region,obj.Cloudfolder,obj.Cloudfolder,obj.Cloudfolder, Network);
             [status, result]=system(cmd);
@@ -82,8 +82,9 @@ classdef gCloudTrain < handle
             fprintf('Execute this command in your system terminal: \n')
             cmd = sprintf('tensorboard --logdir=%s \n',obj.Cloudfolder);
             fprintf(cmd);
-           
-            %[status, result]=system(cmd);
+            
+            % Program will remain busy if run this.
+%             [status, result]=system(cmd); 
 
         end
 %         function [result, status, cmd] = checkpoint(obj)

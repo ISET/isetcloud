@@ -26,7 +26,7 @@ else
 end
 
 %% Configure google SDK
-gcloudPath = fullfile('/usr/local/bin/google-cloud-sdk','path.bash.inc');
+gcloudPath = fullfile('/Users/zhenyiliu/google-cloud-sdk','path.bash.inc');
 cmd = sprintf('source %s',gcloudPath);
 status = system(cmd);
 if status, error('Failed to run path.bash.inc'); end
