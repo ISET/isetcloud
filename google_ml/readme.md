@@ -9,8 +9,40 @@ We suggest you put it under `./models/research/object_detection`.
 ### Tip2:
 
 We found that you can include following lines in your .bash_profile to correctly call gcloud and gsutil everytime. Be sure to change the right path to where you store the google cloud SDK.
-```# The next line updates PATH for the Google Cloud SDK.
+```
+# The next line updates PATH for the Google Cloud SDK.
 if [ -f '/path/to/google-cloud-sdk/path.bash.inc' ]; then source '/Users/zhenyiliu/google-cloud-sdk/path.bash.inc'; fi
 
 # The next line enables shell command completion for gcloud.
-if [ -f '/path/to/google-cloud-sdk/completion.bash.inc' ]; then source '/Users/zhenyiliu/google-cloud-sdk/completion.bash.inc'; fi```
+if [ -f '/path/to/google-cloud-sdk/completion.bash.inc' ]; then source '/Users/zhenyiliu/google-cloud-sdk/completion.bash.inc'; fi
+```
+
+### Tip3:
+
+You should examine the config file before you submit your training / evaluation jobs. 
+```
+train_input_reader: {
+  tf_record_input_reader {
+    input_path: "PATH_TO_BE_CONFIGURED/train.record" # Change to train.record
+  }
+  label_map_path: "PATH_TO_BE_CONFIGURED/label_map.pbtxt" # Change to label_map.pbtxt
+}
+```
+```
+eval_config: {
+  num_examples: 1500 # Change to match the size of your evaluation dataset
+  # Note: The below line limits the evaluation process to 10 evaluations.
+  # Remove the below line to evaluate indefinitely.
+  max_evals: 10 #
+
+```
+```
+eval_input_reader: {
+  tf_record_input_reader {
+    input_path: "PATH_TO_BE_CONFIGURED/val.record" # Change to val.record
+  }
+  label_map_path: "PATH_TO_BE_CONFIGURED/label_map.pbtxt" # Change to label_map.pbtxt
+  shuffle: false
+  num_readers: 1
+}
+```
