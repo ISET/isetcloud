@@ -16,18 +16,17 @@ cloudBucket = 'machine-driving-20180115-ml';
 % We can only us-east1 and us-central1  
 region      = 'us-central1';% if "Internal error occurred for the current attempt" occured due to capacity crunch
 % path to the configured network
-NetworkConfig = fullfile(TFmodels,'object_detection/samples/configs/ssd_mobilenet_v1_pets_crossval.config');
+NetworkConfig = fullfile(TFmodels,'object_detection/samples/configs/faster_rcnn_resnet101_bdd.config');
 % path to GPU configuration file
 GPUconfig=fullfile(TFmodels,'object_detection/samples/cloud/cloud.yml');
 % prepare your train.record and val.record files
-Train_record = '/Users/zhenyiliu/git_repo/isetcloud/local/datasets/kitti_eval1500_train.tfrecord';
-Val_record = '/Users/zhenyiliu/git_repo/isetcloud/local/datasets/kitti_eval1500_val.tfrecord';
+Train_record = '/Users/zhenyiliu/git_repo/isetcloud/local/datasets/bdd-kitti_car_truck_ped/bdd0525_train.tfrecord';
+Val_record = '/Users/zhenyiliu/git_repo/isetcloud/local/datasets/bdd-kitti_car_truck_ped/bdd0525_val.tfrecord';
 Label_map = '/Users/zhenyiliu/git_repo/models/research/object_detection/data/kitti_label_map.pbtxt';
-% Task = 'bdd_evalonKitti_SSD';
-Task = 'Kitti_SSD';
+% Provide a task name
+Task = 'bdd_FasterRCNN';
 %paht to pre-trained model
-% Pretrain_model = '/Users/zhenyiliu/git_repo/isetcloud/local/datasets/pretrained_models/faster_rcnn_resnet101_coco_2018_01_28';
-Pretrain_model = '/Users/zhenyiliu/git_repo/isetcloud/local/datasets/pretrained_models/ssd_kitti_05_21_2018';
+Pretrain_model = '/Users/zhenyiliu/git_repo/isetcloud/local/datasets/pretrained_models/faster_rcnn_resnet101_coco_2018_01_28';
 % path to the dir where you want to save your trained model
 localdir = '/Users/zhenyiliu/git_repo/isetcloud/local/checkpoint';
 
@@ -46,11 +45,11 @@ gCT.eval();
 gCT.monitor();
 
 %% Fetch the trained model
-gCT.fetch()
-
-%% Prediction
-Images_dir = 'Images_dir';
-gCT.predict(Images_dir)
+% gCT.fetch()
+% 
+% %% Prediction
+% Images_dir = 'Images_dir';
+% gCT.predict(Images_dir)
 
 
 

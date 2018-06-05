@@ -11,19 +11,19 @@ if ~strcmp(result, obj.ProjectName)
 end
 %% Upload data to cloudbucket
 
-cmd = sprintf('gsutil cp %s  %s/data/kitti_train.record', obj.Train_record, obj.Cloudfolder);
+cmd = sprintf('gsutil cp %s  %s/data/train.record', obj.Train_record, obj.Cloudfolder);
 [status, result]=system(cmd);
 if ~status, fprintf('%s successfully uploaded \n',obj.Train_record);
 else
     fprintf('%s failed to upload \n',obj.Train_record)
 end
-cmd = sprintf('gsutil cp %s  %s/data/kitti_val.record', obj.Val_record,obj.Cloudfolder);
+cmd = sprintf('gsutil cp %s  %s/data/val.record', obj.Val_record,obj.Cloudfolder);
 [status, result]=system(cmd);
 if ~status,fprintf('%s successfully uploaded \n',obj.Val_record);
 else
     fprintf('%s failed to upload \n',obj.Val_record)
 end
-cmd = sprintf('gsutil cp %s  %s/data/kitti_label_map.pbtxt', obj.Label_map,obj.Cloudfolder);
+cmd = sprintf('gsutil cp %s  %s/data/label_map.pbtxt', obj.Label_map,obj.Cloudfolder);
 [status, result]=system(cmd);
 if ~status,fprintf('%s successfully uploaded \n',obj.Label_map);
 else
