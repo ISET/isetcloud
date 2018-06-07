@@ -46,7 +46,7 @@ eval_input_reader: {
   num_readers: 1
 }
 ```
-
+### Others
 Try to install protobuf3
 ```
 coronal:~ zhenyiliu$ pip install protobuf3
@@ -60,4 +60,9 @@ Installing collected packages: protobuf3
 Successfully installed protobuf3-0.2.1
 ```
 For python-tk, maybe we should go to https://www.python.org/downloads/release/python-2715/ and download the installation package.
-
+To verify your installation, try
+```
+python
+import Tkinker
+```
+If no errors occured, congratulations!
