@@ -46,3 +46,18 @@ eval_input_reader: {
   num_readers: 1
 }
 ```
+
+Try to install protobuf3
+```
+coronal:~ zhenyiliu$ pip install protobuf3
+Collecting protobuf3
+  Downloading https://files.pythonhosted.org/packages/6d/26/955c07e16200d20de70b1e17b246e0574a517b76d6e6393d8ef7ce4f38cd/protobuf3-0.2.1.tar.gz
+Building wheels for collected packages: protobuf3
+  Running setup.py bdist_wheel for protobuf3 ... done
+  Stored in directory: /Users/zhenyiliu/Library/Caches/pip/wheels/38/24/a4/5c5271e794df2d16b27626921dcd437ab75ade71bb5f0f362d
+Successfully built protobuf3
+Installing collected packages: protobuf3
+Successfully installed protobuf3-0.2.1
+```
+For python-tk, maybe we should go to https://www.python.org/downloads/release/python-2715/ and download the installation package.
+
