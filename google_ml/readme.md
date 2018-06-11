@@ -86,4 +86,7 @@ Run following commands in your terminal to access to the instance:
     gcloud compute ssh --zone=us-west1-b machine-learning
 
 You are able to configure the number of gpus you like to use, add disk storage to store your datasets [here with gcould GUI](https://console.cloud.google.com/compute/instances?project=machine-driving-20180115). 
-Then you will be ready to run jupyter notebook for your machine learning tasks.
+
+Once you logged in, run`jupyter-notebook --no-browser --port=7000`, you will get a url like
+`http://localhost:7000/?token=xxxxxxxxxxxxxxxxx`, just replace "localhost" with "35.277.146.166", then visit the url on your local browser. 
+Now you can run your machine learning tasks with jupyter notebook.
