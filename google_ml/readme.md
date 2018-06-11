@@ -66,3 +66,7 @@ python
 import Tkinker
 ```
 If no errors occured, congratulations!
+
+### We have created a new machine-learning instance for running tasks like pytorch models and keras models
+We clone the ubuntu image from Stanford cs231n, so you can run your non-tensorflow tasks [here](https://console.cloud.google.com/compute/instances?project=machine-driving-20180115) as described on this [page](http://cs231n.github.io/gce-tutorial/).
+You will be able to configure the number of gpus you like to use, add disk storage to store your datasets. Then you will be ready to run jupyter notebook.
