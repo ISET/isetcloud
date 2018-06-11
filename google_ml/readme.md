@@ -68,7 +68,7 @@ import Tkinker
 If no errors occured, congratulations!
 
 ### We have created a new machine-learning instance for running tasks like pytorch models and keras models
-We cloned the ubuntu image from Stanford cs231n, so you can run your general machine learning tasks [here](https://console.cloud.google.com/compute/instances?project=machine-driving-20180115) using following frameworks as described on this [page](http://cs231n.github.io/gce-tutorial/).
+We cloned the ubuntu image from Stanford cs231n, which includes following frameworks as described on this [page](http://cs231n.github.io/gce-tutorial/).
 
 - [Anaconda3](https://www.anaconda.com/what-is-anaconda/), a python package manager. You can think of it as a better alternative to `pip`. 
 - Numpy, matplotlib, and tons of other common scientific computing packages.
@@ -78,4 +78,12 @@ We cloned the ubuntu image from Stanford cs231n, so you can run your general mac
 - [Caffe2](https://caffe2.ai/), CPU only. Note that it is very different from the original Caffe. 
 - Nvidia runtime: CUDA 9.0 and cuDNN 7.0. They only work when you create a Cloud GPU instance, which we will cover later. 
 
-You are able to configure the number of gpus you like to use, add disk storage to store your datasets. Then you will be ready to run jupyter notebook.
+Run following commands in your terminal to access to the instance: 
+    
+    # Set your project to be machine drving 20180115
+    gcloud config set project machine-driving-20180115
+    # SSH to the instance
+    gcloud compute ssh --zone=us-west1-b machine-learning
+
+You are able to configure the number of gpus you like to use, add disk storage to store your datasets [here with gcould GUI](https://console.cloud.google.com/compute/instances?project=machine-driving-20180115). 
+Then you will be ready to run jupyter notebook for your machine learning tasks.
