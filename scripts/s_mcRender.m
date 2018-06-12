@@ -1,12 +1,16 @@
-%% Use gCloud to render multiple scenes with the PBRT V2 docker image
+%% Use gCloud to render a scenes with the PBRT V3 docker image
 %
-% This example shows how to render a PBRT scene on the kubernetes
-% cluster.  This code uses the pbrt2ISET tools.  We explain at the end
-% how render multiple scenes.
+% Shows how to render a PBRT scene on the kubernetes cluster.  This code
+% uses the iset3d tools.
 %
-% Initialization
-%   Make sure Docker and google SDK config are correct for your Matlab Env;
-%   Initialize thr Gcloud cluster;
+% We expect that you have already installed the isetcloud.and iset3d.  We
+% do think that it will run all at once.  But that is less educational. The
+% ideas in this script are described more fully on the isetcloud wiki page.
+%
+% We anticipate that you will run this script by hand, section by section.
+%   
+% This function initializes a gcloud k8s cluster and executes the docker
+% image with pbrt V3.
 %
 % Data definition
 %  Identify the local scene data
@@ -17,17 +21,12 @@
 %
 % Download the result (*.dat files) and read them into ISET;
 % 
-% Related toolboxes:  pbrt2ISET, ISET, matlab2cloud
+% Related toolboxes:  iset3d, isetcam, isetcloud
 %
 % NOTES:
-%  Cluster initialization time: around 5 mins.
+%  The cluster initialization time: around 5 mins.
 %
-% Typically, the renderings differ at least in their camera
-% parameters.  For example, they may differ in the camera position.
-% Also, they might differ in the lighting.  They may even have
-% different resources (geometry files, spds, brdfs, ...)
-%
-%ZL, Vistalab 2017
+% ZL, Vistalab 2017
 
 %% Initialize ISET, Google cloud SDK and Docker
 
