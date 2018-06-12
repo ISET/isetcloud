@@ -4,10 +4,32 @@ function [cloudFolder,zipFileName] = uploadPBRT(obj, thisR, varargin )
 % Syntax
 %   [cloudFolder,zipFileName] = gcp.uploadPBRT(thisR, ...)
 %
+% Description:
+%   The piWrite function places a number of files in the rendering
+%   directory.  These include the scene, geometry, material, and lens file
+%   and texture files. The scene, geometry, and material files are.
+%   fundamental. We call the other files (textures, lens, spds, ...other)
+%   resources. 
+%
+%   This function collects the resources into a single zip file.  It then
+%   uploads the scene, geometry, materials and zipped resources to the
+%   gcloud bucket.
+%
 % Input
 %   thisR:  A render recipe.
 %
-% Description
+% Optional key/value pairs
+%   sceneonly   - Only the scene file is uploaded because the other
+%                 information is already there.
+%   scenematerial - Scene and material
+%   scenematerialgeometry  - Scene, material and geometry
+%   scenematerialgeometrylens - Default is upload them all
+%
+% Returns
+%   cloudFolder - The bucket where the files were copied
+%   zipFileName - The name of the resources zip file
+%
+% Descriptions
 %  Using the information in the render recipe (thisR), we find and zip
 %  the resource files.  The zip file is placed inside the data
 %  directory.
@@ -51,9 +73,15 @@ p = inputParser;
 varargin = ieParamFormat(varargin);  % Allow spaces and capitalization
 
 p.addRequired('recipe',@(x)(isa(x,'recipe')));
-p.addParameter('overwritezip',true,@islogical);
-p.addParameter('uploadzip',true,@islogical);
+
+% Special name for the zip resources file
 p.addParameter('zipfilename','',@ischar);
+
+% Specify whether we overwrite the zip resources file
+p.addParameter('overwritezip',true,@islogical);
+
+% Specify whether we upload the resources file
+p.addParameter('uploadzip',true,@islogical);
 
 p.parse(thisR,varargin{:});
 
@@ -73,6 +101,12 @@ if(obj.renderDepth)
 end
 
 %% Package up the files for uploading to the k8s
+
+% When this step is done, we will have a
+%  * scene file
+%  * geometry file
+%  * material file
+%  * a zipped resources file
 
 % These are the PBRT scene file and resources
 pbrtScene = thisR.get('output file');
