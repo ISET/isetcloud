@@ -44,7 +44,8 @@ classdef gCloud < handle
         
         % Variables specific to cloud provider
         provider     = 'Google';
-        clusterName  = 'rtb4';
+        projectid    = 'primal-surfer-140120';
+        clusterName  = 'pbrtrender';
         zone         = 'us-central1-a';
         instanceType = 'n1-highcpu-32';
         minInstances = 1;     %
@@ -81,7 +82,8 @@ classdef gCloud < handle
             % ieParamFormat goes here.  Force everything to lower
             % case and no spaces
             p.addParameter('provider','Google',@ischar);
-            p.addParameter('clusterName','rtb4',@ischar);
+            p.addParameter('projectid','primal-surfer-140120',@ischar);
+            p.addParameter('clusterName','pbrtcloud',@ischar);
             p.addParameter('zone','us-central1-a',@ischar);
             p.addParameter('instanceType','n1-highcpu-32',@ischar);
             p.addParameter('minInstances',1,@isnumeric);
@@ -96,6 +98,7 @@ classdef gCloud < handle
             p.parse(varargin{:});
             
             obj.provider     = p.Results.provider;
+            obj.projectid    = p.Results.projectid;
             obj.clusterName  = p.Results.clusterName;
             obj.zone         = p.Results.zone;
             obj.instanceType = p.Results.instanceType;
@@ -116,34 +119,64 @@ classdef gCloud < handle
             if status, error('Problem setting name space'); end
             
         end
-        function [result, status, cmd]=clusterRm(obj,clusterName,zone)
+        
+        % Shut down and remove a k8s cluster
+        function [result, status, cmd]=clusterRm(obj)
+            fprintf('Removing the cluster %s\n',obj.clusterName);
+            fprintf('This can take a 3 or even 5 of minutes\n');
             if notDefined('zone')
-                cmd = sprintf('gcloud container clusters delete %s --zone=%s',clusterName,obj.zone);
+                cmd = sprintf('gcloud container clusters delete %s --zone=%s',obj.clusterName,obj.zone);
             else
-                cmd = sprintf('gcloud container clusters delete %s --zone=%s',clusterName,zone);
+                cmd = sprintf('gcloud container clusters delete %s --zone=%s',obj.clusterName,obj.zone);
             end
             [status,result]= system(cmd);
         end
         
         % List contents in a bucket.
-        function [result, status, cmd] = ls(obj,bucketname)
-            if notDefined('bucketname')
-                cmd = sprintf('gsutil ls');
-                [status,result] = system(cmd);
-            else
-                d = bucketname;
-                cmd = sprintf('gsutil ls %s\n',d);
-                [status,result] = system(cmd);
-            end
+        function [result, status, cmd] = ls(obj,varargin)
+            % print:  logical, for printing out the listing to the command
+            %         line
+            % folder: a specific budget within the general cloudBucket
+            %
+            % gCloud.ls('folder','wandell');
+            % gCloud.ls('folder','wandell/stop');
+            
+            p = inputParser;
+            p.addParameter('print',false,@logical);
+            p.addParameter('folder','',@ischar);
+            
+            p.parse(varargin{:});
+            print  = p.Results.print;
+            folder = p.Results.folder;
+
+            d = obj.cloudBucket;
+            if ~isempty(folder), d = fullfile(d,folder); end
+            cmd = sprintf('gsutil ls %s\n',d);
+            [status,result] = system(cmd);
             
             if ~isempty(result)
                 % Converts the char array return to a cell array
                 files = split(result);
                 ispresent = cellfun(@(s) ~isempty(s), files);
                 result = files(ispresent);
-            end
-            
+                if print
+                    fprintf('\n----------------------\n');
+                    for ii=1:length(result)
+                        fprintf('%d:  %s\n',ii,result{ii});
+                    end
+                end
+            else
+                if print
+                    disp('Print empty result here.  Not yet implemented')
+                end
+            end            
         end
+        
+        % List the buckets
+        function [result, status, cmd] = bucketList(obj)
+            disp('bucketList not yet implemented');
+        end
+        
         
         % Create a new bucket.
         function [result, status, cmd] = bucketCreate(obj,bucketname)
@@ -156,7 +189,7 @@ classdef gCloud < handle
             end
         end
         
-        % Upload a folder or a file
+        % Upload a folder or a file to a directory in the cloud
         function [result, status, cmd] = upload(obj,local_dir,cloud_dir)
             % cloud_dir = fullfile(obj.bucket,cloud_dir);
             %
@@ -170,13 +203,13 @@ classdef gCloud < handle
             end
         end
         
-        % Remove a bucket
-        function [result, status, cmd]=rm(obj,name)
+        % Remove the entire bucket
+        function [result, status, cmd] = rm(obj,name)
             cmd = sprintf('gsutil rm -r %s',name);
             [status, result] = system(cmd);
         end
         
-        % Empty a bucket
+        % Empty the files inside a bucket
         function [result, status, cmd]=empty(obj,name)
             cmd = sprintf('gsutil rm  %s/**',name);
             [status, result] = system(cmd);
@@ -271,9 +304,11 @@ classdef gCloud < handle
                 error('Name space read error\n%s\n',result);
             end
         end
+        
         function [result,status,cmd,pod] = Podslist(obj)
-                cmd = sprintf('kubectl get pods -a --namespace=%s -o json',obj.namespace);
+                cmd = sprintf('kubectl get pods --namespace=%s -o json',obj.namespace);
                 [status, result_original] = system(cmd);
+                
                 result = jsondecode(result_original);
                 if ~isempty(result.items)
                 for i=1:length(result.items)

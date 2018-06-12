@@ -5,11 +5,10 @@ function obj = init(obj, varargin )
 %    gCloud.init(...)
 %
 % Description
-%   This function sets up the k8s cluster on the google cloud
-%   platform. It uses the defaults (account, the docker image, the
-%   storage bucket) that are set when you first create the gCloud
-%   instance.  This function is called when you create the gCloud
-%   object.  It is not typically invoked on its own.
+%   Sets up the k8s cluster on the google cloud platform. This function is
+%   called when you create the gCloud object.  It uses the defaults
+%   (account, docker image, the storage bucket) that are set when you
+%   create the gCloud instance.  It is not typically invoked on its own.
 %
 % Example
 %   
@@ -25,13 +24,32 @@ function obj = init(obj, varargin )
 %{
 %}
 
+%% Check that we are in the right project
+
+% Our lab already has two projects. 
+%  machine-driving-20180115, and
+%  primal-surfer-140120
+%
+% We should make sure we are in the right project before we run. This is
+% both for billing and because the API might be set up differently between
+% projects.
+cmd = sprintf('gcloud config get-value project');
+[~, result] = system(cmd);
+result = result(1:end-1);
+if ~strcmp(result, obj.projectid)
+    cmd = sprintf('gcloud config set project %s',obj.projectid);
+    system(cmd);
+    cmd = sprintf('gcloud config get-value project');
+    [~, result] = system(cmd);
+end
+fprintf('Project is set to %s\n',result(1:end-1));
 
 %% List and possibly create the cluster
 
 cmd = sprintf('gcloud container clusters list --filter=%s',obj.clusterName);
 [~, result] = system(cmd);
 
-% If not there, create it
+% If the returned name is empty, create the cluster with this name
 if isempty(result)
     
     cmd = sprintf('gcloud container clusters create %s --num-nodes=1 --max-nodes-per-pool=100 --machine-type=%s --zone=%s --scopes default,storage-rw',...
@@ -46,7 +64,7 @@ if isempty(result)
             cmd, obj.minInstances, obj.maxInstances);
     end
     
-    tic; fprintf('Using gcloud to create the k8s cluster named %s ...',obj.clusterName)
+    tic; fprintf('Creating a k8s cluster named %s ...',obj.clusterName)
     [~, result] = system(cmd);
     fprintf('done\n'); toc;
     
