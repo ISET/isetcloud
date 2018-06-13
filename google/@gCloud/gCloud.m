@@ -239,14 +239,16 @@ classdef gCloud < handle
             [status, result_configuration]=system(cmd);
             result_configuration=jsondecode(result_configuration);
             
-            result_clusters = struct2table(result_clusters);
+%           result_clusters = struct2table(result_clusters);
             result_configuration = result_configuration.core;
             if isfield(result_configuration,'disable_usage_reporting')
                 result_configuration = rmfield(result_configuration,'disable_usage_reporting');
             end
             
             % Display (always?)
+             disp('*************Project Information*************');
             disp(result_configuration);
+            disp('*************Cluster Information*************');
             disp(result_clusters);
             
             % Configure result
@@ -312,8 +314,8 @@ classdef gCloud < handle
                 result = jsondecode(result_original);
                 if ~isempty(result.items)
                 for i=1:length(result.items)
-                podname= result.items.metadata.name;
-                fprintf('%s is %s \n', podname, result.items.status.phase)
+                podname= result.items(i).metadata.name;
+                fprintf('%s is %s \n', podname, result.items(i).status.phase)
                 pod{i}=podname;
                 end
                 else

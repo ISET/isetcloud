@@ -19,11 +19,10 @@ function [cloudFolder,zipFileName] = uploadPBRT(obj, thisR, varargin )
 %   thisR:  A render recipe.
 %
 % Optional key/value pairs
-%   sceneonly   - Only the scene file is uploaded because the other
-%                 information is already there.
-%   scenematerial - Scene and material
-%   scenematerialgeometry  - Scene, material and geometry
-%   scenematerialgeometrylens - Default is upload them all
+%
+%   materials - upload materials.pbrt, default is true
+%   geometry  - upload geomety.pbrt, default is true
+%   resources - upload rendering dependent files, default is true
 %
 % Returns
 %   cloudFolder - The bucket where the files were copied
@@ -80,14 +79,22 @@ p.addParameter('zipfilename','',@ischar);
 % Specify whether we overwrite the zip resources file
 p.addParameter('overwritezip',true,@islogical);
 
-% Specify whether we upload the resources file
-p.addParameter('uploadzip',true,@islogical);
+% Specify whether we upload a material.pbrt
+p.addParameter('materials',true,@islogical);
+
+% Specify whether we upload a geometry.pbrt
+p.addParameter('geometry',true,@islogical);
+
+% Specify whether we upload the zipped resources file
+p.addParameter('resources',true,@islogical);
 
 p.parse(thisR,varargin{:});
 
 overwritezip = p.Results.overwritezip;  % This refers to the local zip
-uploadzip    = p.Results.uploadzip;     % This refers to the cloud zip
-zipFileName  = p.Results.zipfilename;     % This refers to the cloud zip
+materials     = p.Results.materials;      % 
+geometry     = p.Results.geometry;      %
+resources    = p.Results.resources;     % This refers to the cloud zip
+zipFileName  = p.Results.zipfilename;   % This refers to the cloud zip
 
 %% Write out the depth file, if required
 if(obj.renderDepth)
@@ -170,7 +177,7 @@ if ~exist(pbrtSceneFile,'file')
 end
 
 cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
-if isempty(zipFileName) || ~uploadzip
+if isempty(zipFileName) || ~resources
     % Either no zip file or we are told not to upload the zip.
     % So we only copy the pbrt scene file
     cmd = sprintf('gsutil cp  %s %s/',pbrtSceneFile,...
@@ -198,7 +205,7 @@ end
 pbrtMaterialFile = fullfile(p,'*_materials.pbrt');
 pbrtGeometryFile = fullfile(p,'*_geometry.pbrt');
 
-if(~isempty(dir(pbrtMaterialFile)))
+if(isempty(dir(pbrtMaterialFile))) || materials
     cmd = sprintf('gsutil cp  %s %s/',pbrtMaterialFile,...
         cloudFolder);
     [status, result] = system(cmd);
@@ -207,7 +214,7 @@ if(~isempty(dir(pbrtMaterialFile)))
     end
 end
 
-if(~isempty(dir(pbrtGeometryFile)))
+if(isempty(dir(pbrtGeometryFile))) || geometry
     cmd = sprintf('gsutil cp  %s %s/',pbrtGeometryFile,...
         cloudFolder);
     [status, result] = system(cmd);

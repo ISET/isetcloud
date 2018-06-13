@@ -84,7 +84,6 @@ from = thisR.get('from');
 
 % Default is a relatively low resolution (256).
 thisR.set('camera','pinhole');
-thisR.set('from',from + [0 0 100]);  % First left/right, 2nd moved camera closer and to the right 
 thisR.set('film resolution',256);
 thisR.set('rays per pixel',128);
 
@@ -106,10 +105,14 @@ fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 % First dimension is right-left
 % Second dimension is towards the object.
 % The up direction is specified in lookAt.up
-thisR.set('from',lookAt.from + [1 0 0]);
+thisR.set('from',from + [0 0 100]);
 thisR.outputFile = fullfile(mcRootPath,'local','stop',[n,'-2',e]);
 
 piWrite(thisR);   % This lookAt case only modifies the scene file
+
+% This will create a new material file, to change the material, see
+% t_piMaterialChange.m in iset3d
+% piWrite(thisR, 'creatematerials',true) 
 
 % Call this upload so all that we add is stop-2.pbrt, we do not upload the
 % geometry and materials and other stuff again.
@@ -138,11 +141,12 @@ gcp.render();
 
 %{
 [~,~,~,podname] = gcp.Podslist();
+
 gcp.PodDescribe(podname{1})
 gcp.Podlog(podname{1});
 %}
 
-%% Keep checking for the data, every 5 sec, and download it is there
+%% Keep checking for the data, every 15 sec, and download it is there
 
 scene = [];
 while isempty(scene)
@@ -150,13 +154,13 @@ while isempty(scene)
         scene   = gcp.downloadPBRT(thisR);
         disp('Data downloaded');
     catch
-        pause(5);
+        pause(15);
     end
 end
-scene_1 = scene{1};
-
 % Show it in ISET
-ieAddObject(scene_1); sceneWindow;
+for i = 1:length(scene) 
+    ieAddObject(scene{i});end
+sceneWindow;
 sceneSet(scene,'gamma',1);
 
 %% Remove all jobs
