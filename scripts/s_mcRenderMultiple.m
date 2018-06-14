@@ -161,7 +161,8 @@ while isempty(scene)
 end
 % Show it in ISET
 for ii = 1:length(scene) 
-    ieAddObject(scene{ii});end
+    ieAddObject(scene{ii});
+end
 sceneWindow;
 sceneSet(scene,'gamma',0.5);
 

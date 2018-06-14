@@ -62,7 +62,11 @@ target.depthFlag = 0;
 
 % Add this target to the targets already stored.
 if isempty(replace),   obj.targets = cat(1,obj.targets,target);
-else,                  obj.targets(replace) = target;
+else
+    if isempty(obj.targets) && replace == 1, obj.targets = target;
+    elseif ~isempty(obj.targets),            obj.targets(replace) = target;
+    else, error('Error replacing a target. %d',replace);
+    end
 end
 
 %% Add depth file if requested
