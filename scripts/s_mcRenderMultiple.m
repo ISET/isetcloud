@@ -88,11 +88,11 @@ thisR.set('film resolution',256);
 thisR.set('rays per pixel',128);
 
 % Set up data for upload
-outputDir = fullfile(piRootPath,'local','stop');
+outputDir = fullfile(mcRootPath,'local','stop');
 if ~exist(outputDir,'dir'), mkdir(outputDir); end
 
 [p,n,e] = fileparts(fname); 
-thisR.outputFile = fullfile(outputDir,[n,'-1',e]);
+thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,1,e));
 piWrite(thisR);
 
 % Set parameters for multiple scenes, same geometry and materials
@@ -105,20 +105,22 @@ fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 % First dimension is right-left
 % Second dimension is towards the object.
 % The up direction is specified in lookAt.up
-thisR.set('from',from + [0 0 100]);
-thisR.outputFile = fullfile(mcRootPath,'local','stop',[n,'-2',e]);
-
-piWrite(thisR);   % This lookAt case only modifies the scene file
-
-% This will create a new material file, to change the material, see
-% t_piMaterialChange.m in iset3d
-% piWrite(thisR, 'creatematerials',true) 
-
-% Call this upload so all that we add is stop-2.pbrt, we do not upload the
-% geometry and materials and other stuff again.
-gcp.uploadPBRT(thisR,'material',false,'geometry',false,'resources',false);   
-addPBRTTarget(gcp,thisR);
-fprintf('Added second target.  Now %d current targets\n',length(gcp.targets));
+for jj=1:5
+    thisR.set('from',from + [0 0 jj]);
+    thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));
+    
+    piWrite(thisR);   % This lookAt case only modifies the scene file
+    
+    % This will create a new material file, to change the material, see
+    % t_piMaterialChange.m in iset3d
+    % piWrite(thisR, 'creatematerials',true)
+    
+    % Call this upload so all that we add is stop-2.pbrt, we do not upload the
+    % geometry and materials and other stuff again.
+    gcp.uploadPBRT(thisR,'material',false,'geometry',false,'resources',false);
+    addPBRTTarget(gcp,thisR,'replace',jj+1);
+    fprintf('Added  target.  Now %d current targets\n',length(gcp.targets));
+end
 
 %{
  % Select which files we supload again
@@ -158,10 +160,10 @@ while isempty(scene)
     end
 end
 % Show it in ISET
-for i = 1:length(scene) 
-    ieAddObject(scene{i});end
+for ii = 1:length(scene) 
+    ieAddObject(scene{ii});end
 sceneWindow;
-sceneSet(scene,'gamma',1);
+sceneSet(scene,'gamma',0.5);
 
 %% Remove all jobs
 gcp.JobsRmAll();

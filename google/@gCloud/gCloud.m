@@ -308,34 +308,44 @@ classdef gCloud < handle
         end
         
         function [result,status,cmd,pod] = Podslist(obj)
-                cmd = sprintf('kubectl get pods --namespace=%s -o json',obj.namespace);
-                [status, result_original] = system(cmd);
-                
+            % List the status of the kubernetes pod, which is the smallest
+            % deployable instance of a running process in the cluster.
+            cmd = sprintf('kubectl get pods --namespace=%s -o json',obj.namespace);
+            [status, result_original] = system(cmd);
+            
+            try
                 result = jsondecode(result_original);
-                if ~isempty(result.items)
-                for i=1:length(result.items)
-                podname= result.items(i).metadata.name;
-                fprintf('%s is %s \n', podname, result.items(i).status.phase)
-                pod{i}=podname;
+            catch
+                error('jsondecode error. result_original\n %s',result_original);
+            end
+            if ~isempty(result.items)
+                pod = cell(length(result.items),1);
+                for ii=1:length(result.items)
+                    podname= result.items(ii).metadata.name;
+                    fprintf('%s is %s \n', podname, result.items(ii).status.phase)
+                    pod{ii}=podname;
                 end
-                else
-                    fprintf('No resources found\n')
-                
-                end
-                if status
-                    warning('Did not read pds correctly');
-                end
+            else
+                fprintf('No resources found\n');
+                pod = [];
+            end
+            if status
+                warning('Did not read pds correctly');
+            end
         end
+        
         function [result,status,cmd] = PodDescribe(obj,podname)
             cmd = sprintf('kubectl describe pod %s --namespace=%s',podname,obj.namespace);
             [status, result] = system(cmd);
         end
+        
         function [result, status,cmd] = Podlog(obj,podname)
                 cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
                 [status, result] = system(cmd);
                 if status, warning('Log not returned correctly\n'); end
                 fprintf('%s\n',result);
         end
+        
         function [result, status, cmd] = JobsRmAll(obj)
             cmd = sprintf('kubectl delete jobs --all --namespace=%s',obj.namespace);
                 [status, result] = system(cmd);

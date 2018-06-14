@@ -1,10 +1,42 @@
-function target = addPBRTTarget(obj,thisR)
+function target = addPBRTTarget(obj, thisR, varargin)
 % Add a PBRT target job to the google cloud engine instance
+%
+% Syntax
+%    target = addPBRTTarget(obj,thisR, varargin);
+%
+% Description
+%  We modify the gcp object to contain a list of rendering targets for
+%  the gcloud.render option.
+%
+%  When replacing a rendering with a depth rendering, we assume that the
+%  scene is in the replace slot, and the next one is the depth slot. If you
+%  first rendered without depth, and then you change and add a depth, do
+%  not use 'replace'.
+%
+% Inputs
+%     obj:  A gCloud object
+%   thisR: A rendering recipe
+%
+% Key/value options
+%  replace: A particular target slot (1, 2 ... N) for this job.  Normally,
+%           the target is appended to the existing targets.  When 'replace'
+%           is set to an integer, it must be one of the existing slots.
+%
+% Returns
+%   target:  This particular target, which has been placed in a slot
 %
 % ZL Vistateam, 2017
 
 %% Parse
+p = inputParser;
+p.addRequired('obj',@(x)(isa(x,'gCloud')));
+p.addRequired('thisR',@(x)(isa(x,'recipe')));
 
+% We add to an existing slot, or we allow it to append to the end.
+p.addParameter('replace',[],@(x)(x >= 1 && x <= (length(obj.targets)+1)));
+p.parse(obj,thisR,varargin{:});
+
+replace = round(p.Results.replace);
 
 %% Act
 
@@ -21,26 +53,35 @@ cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
 % change.
 pbrtScene = thisR.get('output file');
 [~, sceneName] = fileparts(pbrtScene);
-target.camera = thisR.camera;
-target.local = pbrtScene;
+target.camera  = thisR.camera;
+target.local   = pbrtScene;
 target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
 
  % Indicate if this target is a depth map or not. This is used to sort between returned targets when downloading. 
 target.depthFlag = 0;
 
 % Add this target to the targets already stored.
-obj.targets = cat(1,obj.targets,target);
+if isempty(replace),   obj.targets = cat(1,obj.targets,target);
+else,                  obj.targets(replace) = target;
+end
 
-%% Add depth file if necessary
+%% Add depth file if requested
 if(obj.renderDepth)
-    
+    % We assume the depth is always the next target, after the scene
+    % render.  This is dangerous.  Say the person has a set of targets and
+    % then changes whether they are computing the depth.  We might be
+    % over-writing the next target.  Be fearful when you get here.
     target.camera = thisR.camera;
     target.local = pbrtScene;
     target.remote = fullfile(cloudFolder,sprintf('%s_depth.pbrt',sceneName));
     target.depthFlag = 1;
 
     % Add this target to the targets already stored.
-    obj.targets = cat(1,obj.targets,target);
+    if isempty(replace)
+        obj.targets = cat(1,obj.targets,target);
+    else
+        obj.targets(replace+1) = target;
+    end
     
 end
 
