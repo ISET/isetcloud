@@ -97,7 +97,7 @@ piWrite(thisR);
 
 % Set parameters for multiple scenes, same geometry and materials
 gcp.uploadPBRT(thisR);  
-addPBRTTarget(gcp,thisR);
+addPBRTTarget(gcp,thisR,'replace',1);
 fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
 %% Change the lookAt for the stop sign
@@ -122,43 +122,31 @@ for jj=1:5
     fprintf('Added  target.  Now %d current targets\n',length(gcp.targets));
 end
 
-%{
- % Select which files we supload again
- gcp.uploadPBRT(thisR,'material',false,'geometry',false,'resources',false);   
-%}
 %% Describe the targets
 
-% gcp.targetsList;
-%
-if ~isempty(gcp.targets)
-    fprintf('%d current targets\n',length(gcp.targets));
-else
-    error('No targets!');
-end
+gcp.targetsList;
 
 %% This invokes the PBRT-V3 docker image
 gcp.render();
 
+cnt = 0;
+while cnt < length(gcp.targets)
+    cnt = podSucceeded(gcp);
+    pause(5);
+end
+
 %%  You can get a lot of information about the job this way
 
 %{
-[~,~,~,podname] = gcp.Podslist();
-
 gcp.PodDescribe(podname{1})
 gcp.Podlog(podname{1});
 %}
 
 %% Keep checking for the data, every 15 sec, and download it is there
 
-scene = [];
-while isempty(scene)
-    try
-        scene   = gcp.downloadPBRT(thisR);
-        disp('Data downloaded');
-    catch
-        pause(15);
-    end
-end
+scene   = gcp.downloadPBRT(thisR);
+disp('Data downloaded');
+
 % Show it in ISET
 for ii = 1:length(scene) 
     ieAddObject(scene{ii});

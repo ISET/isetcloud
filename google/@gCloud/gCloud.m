@@ -120,8 +120,8 @@ classdef gCloud < handle
             
         end
         
-        % Shut down and remove a k8s cluster
         function [result, status, cmd]=clusterRm(obj)
+            % Shut down and remove a k8s cluster
             fprintf('Removing the cluster %s\n',obj.clusterName);
             fprintf('This can take a 3 or even 5 of minutes\n');
             if notDefined('zone')
@@ -132,11 +132,12 @@ classdef gCloud < handle
             [status,result]= system(cmd);
         end
         
-        % List contents in a bucket.
         function [result, status, cmd] = ls(obj,varargin)
+            % List the contents of a bucket on the cloud
+            %
             % print:  logical, for printing out the listing to the command
             %         line
-            % folder: a specific budget within the general cloudBucket
+            % folder: a specific bucket within the root cloudBucket
             %
             % gCloud.ls('folder','wandell');
             % gCloud.ls('folder','wandell/stop');
@@ -172,16 +173,10 @@ classdef gCloud < handle
             end            
         end
         
-        % List the buckets
-        function [result, status, cmd] = bucketList(obj)
-            disp('bucketList not yet implemented');
-        end
-        
-        
-        % Create a new bucket.
-        function [result, status, cmd] = bucketCreate(obj,bucketname)
+        function [result, status, cmd] = bucketCreate(~,bucketname)
+            % Create a bucket with a specific name
             if notDefined('bucketname')
-                disp('Bucket name must be given')
+                disp('Bucket name required')
             else
                 bname  = bucketname;
                 cmd = sprintf('gsutil mb %s\n',bname);
@@ -189,8 +184,8 @@ classdef gCloud < handle
             end
         end
         
-        % Upload a folder or a file to a directory in the cloud
-        function [result, status, cmd] = upload(obj,local_dir,cloud_dir)
+        function [result, status, cmd] = upload(~,local_dir,cloud_dir)
+            % Upload a folder or a file to a directory in the cloud
             % cloud_dir = fullfile(obj.bucket,cloud_dir);
             %
             [~,~,ext] = fileparts(local_dir);
@@ -203,51 +198,56 @@ classdef gCloud < handle
             end
         end
         
-        % Remove the entire bucket
-        function [result, status, cmd] = rm(obj,name)
+        function [result, status, cmd] = rm(~,name)
+            % Remove an entire bucket
             cmd = sprintf('gsutil rm -r %s',name);
             [status, result] = system(cmd);
         end
         
-        % Empty the files inside a bucket
-        function [result, status, cmd]=empty(obj,name)
+        function [result, status, cmd]=emptyBucket(~,name)
+            % Empty the files inside a bucket
             cmd = sprintf('gsutil rm  %s/**',name);
             [status, result] = system(cmd);
         end
         
         % Download a folder or a file
-        function [result, status, cmd] = download(obj,cloud_dir,local_dir)
+        function [result, status, cmd] = download(~,cloud_dir,local_dir)
             % cloud_dir = fullfile(obj.bucket,cloud_dir);
             cmd = sprintf('gsutil cp %s %s',cloud_dir,local_dir);
             [status, result] = system(cmd);
         end
         
-        % Display current configuration
-        function [result, status, cmd] = Configlist(obj)
-            % List the cluster information from the gcloud container
+        function [result, status, cmd] = Configlist(~)
+            % Display current configuration
+            % Get information about the clusters from the gcloud container
             cmd = sprintf('gcloud container clusters list --format=json');
             [~, result_clusters]=system(cmd);
             result_clusters=jsondecode(result_clusters);
+            
+            % We only preserve some fields.  These we delete.
             fields = {'addonsConfig','clusterIpv4Cidr','currentMasterVersion',...
                 'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
                 'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
-                'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth','nodeConfig','locations','subnetwork'};
+                'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth',...
+                'nodeConfig','locations','subnetwork'};
             result_clusters = rmfield(result_clusters,fields);
-            result_clusters = orderfields(result_clusters, {'name', 'zone', 'status','createTime','currentNodeCount'});
+            result_clusters = orderfields(result_clusters, ...
+                {'name', 'zone', 'status','createTime','currentNodeCount'});
             
             cmd = sprintf('gcloud config list --format=json');
-            [status, result_configuration]=system(cmd);
+            [status, result_configuration] = system(cmd);
             result_configuration=jsondecode(result_configuration);
             
-%           result_clusters = struct2table(result_clusters);
+            % result_clusters = struct2table(result_clusters);
             result_configuration = result_configuration.core;
             if isfield(result_configuration,'disable_usage_reporting')
                 result_configuration = rmfield(result_configuration,'disable_usage_reporting');
             end
             
             % Display (always?)
-             disp('*************Project Information*************');
+            disp('*************Project Information*************');
             disp(result_configuration);
+            
             disp('*************Cluster Information*************');
             disp(result_clusters);
             
@@ -257,19 +257,36 @@ classdef gCloud < handle
             
         end
         
+        function targetsList(obj)
+            % Display a nice list of the targets
+            if isempty(obj.targets)
+                fprintf('No targets\n');
+            else
+                fprintf('\nCamera\t\t local\t\t remote\t\t depth\n')
+                fprintf('--------------------------------------------------------\n');
+                for ii =1:length(obj.targets)
+                    cType = obj.targets(ii).camera.subtype;
+                    [~,localFile,e1] = fileparts(obj.targets(ii).local);
+                    [~,remoteFile,e2] = fileparts(obj.targets(ii).remote);
+                    dFlag = obj.targets(ii).depthFlag;
+                    fprintf('%d: %s\t%s\t%s\t%d\n',ii,cType,[localFile,e1],[remoteFile,e2],dFlag);
+                    
+                end
+            end
+        end
+        
         %% kubectl related methods
         
-        % List the jobs in a specific name space or in all name spaces
         function [result,status,cmd] = listJobs(obj,varargin)
-            % List all the jobs in all the name spaces
-            % Or we will parse the varargin and find one particular
-            % name space
+            % List the jobs in a specific name space or in all name spaces
+            % We parse the varargin tp find one particular name space
             p = inputParser;
             varargin = ieParamFormat(varargin);
             p.addParameter('namespace',obj.namespace,@ischar);
             p.parse(varargin{:});
             thisNameSpace = p.Results.namespace;
             
+            %%
             if strcmp(thisNameSpace,'all')
                 cmd = sprintf('kubectl get jobs --all-namespaces');
             else
@@ -281,17 +298,22 @@ classdef gCloud < handle
                 error('Name space read error\n%s\n',result);
             end
         end
+        
         function [result, status, cmd] = checkJobs(obj, varargin)
+            % Prints out a summary of the jobs that are running
             p = inputParser;
             varargin = ieParamFormat(varargin);
             p.addParameter('namespace',obj.namespace,@ischar);
             p.parse(varargin{:});
             thisNameSpace = p.Results.namespace;
+            
+            %%
             cmd = sprintf('kubectl get jobs --namespace=%s -o json',thisNameSpace);
             [status,result] = system(cmd);
             if status
                 error('Name space read error\n%s\n',result);
             end
+            
             result = jsondecode(result);
             NumofJobs = sum(~cellfun(@isempty,{result.items}));
             NumofJobs = NumofJobs - 1;
@@ -299,7 +321,7 @@ classdef gCloud < handle
         end
         
         % List all the name spaces currently on the cluster
-        function [result,status,cmd] = listNames(obj,varargin)
+        function [result,status,cmd] = listNames(~,varargin)
             cmd = sprintf('kubectl get namespaces');
             [status,result] = system(cmd);
             if status
