@@ -119,7 +119,7 @@ for jj=1:5
     % geometry and materials and other stuff again.
     gcp.uploadPBRT(thisR,'material',false,'geometry',false,'resources',false);
     addPBRTTarget(gcp,thisR,'replace',jj+1);
-    fprintf('Added  target.  Now %d current targets\n',length(gcp.targets));
+    fprintf('Added target.  Now %d current targets\n',length(gcp.targets));
 end
 
 %% Describe the targets

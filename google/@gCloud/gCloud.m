@@ -129,7 +129,7 @@ classdef gCloud < handle
             else
                 cmd = sprintf('gcloud container clusters delete %s --zone=%s',obj.clusterName,obj.zone);
             end
-            [status,result]= system(cmd);
+            system(cmd);
         end
         
         function [result, status, cmd] = ls(obj,varargin)
@@ -329,12 +329,16 @@ classdef gCloud < handle
             end
         end
         
-        function [result,status,cmd,pod] = Podslist(obj)
+        function [result,status,cmd,pod] = Podslist(obj, varargin)
             % List the status of the kubernetes pods, the smallest
             % deployable instance of a running process in the cluster. PODS
             % typically run in a Node.  Often there is one POD per node, if
             % the resources to run the POD is matched to what is available
             % on a single node.
+            p = inputParser;
+            p.addRequired('obj',@(x)(isa(x,'gCloud')));
+            p.addParameter('print',true,@islogical);
+            p.parse(obj,varargin{:});
             cmd = sprintf('kubectl get pods --namespace=%s -o json',obj.namespace);
             [status, result_original] = system(cmd);
             
@@ -348,7 +352,7 @@ classdef gCloud < handle
                 pod = cell(length(result.items),1);
                 for ii=1:length(result.items)
                     podname= result.items(ii).metadata.name;
-                    fprintf('%s is %s \n', podname, result.items(ii).status.phase)
+                    if p.Results.print,fprintf('%s is %s \n', podname, result.items(ii).status.phase); end
                     pod{ii}=podname;
                 end
             else

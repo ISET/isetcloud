@@ -1,8 +1,8 @@
-function cnt = podSucceeded(gcp,varargin)
+function cnt = podSucceeded(obj,varargin)
 % Count how many of the kubernetes (PODS) have finished
 %
 % Syntax
-%   cnt = podSucceeded(gcp)
+%   cnt = podSucceeded(obj)
 %
 % Description
 %    We set up processes to run in the cluster. This routine counts how
@@ -23,13 +23,13 @@ function cnt = podSucceeded(gcp,varargin)
 
 %%
 p = inputParser;
-p.addRequired('gcp',@(x)(isa(x,'gCloud')));
+p.addRequired('obj',@(x)(isa(x,'gCloud')));
 p.addParameter('print',true,@islogical);
-p.parse(gcp,varargin{:});
+p.parse(obj,varargin{:});
 
 %%
 cnt = 0;
-result = gcp.Podslist();
+result = obj.Podslist(obj,'print',false);
 nPODS = length(result.items);
 for ii=1:nPODS
    if isequal(result.items(ii).status.phase,'Succeeded')
