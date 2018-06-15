@@ -320,8 +320,8 @@ classdef gCloud < handle
             fprintf('%d job to be done \n', NumofJobs);
         end
         
-        % List all the name spaces currently on the cluster
         function [result,status,cmd] = listNames(~,varargin)
+            % List all the name spaces currently on the cluster
             cmd = sprintf('kubectl get namespaces');
             [status,result] = system(cmd);
             if status
@@ -330,16 +330,20 @@ classdef gCloud < handle
         end
         
         function [result,status,cmd,pod] = Podslist(obj)
-            % List the status of the kubernetes pod, which is the smallest
-            % deployable instance of a running process in the cluster.
+            % List the status of the kubernetes pods, the smallest
+            % deployable instance of a running process in the cluster. PODS
+            % typically run in a Node.  Often there is one POD per node, if
+            % the resources to run the POD is matched to what is available
+            % on a single node.
             cmd = sprintf('kubectl get pods --namespace=%s -o json',obj.namespace);
             [status, result_original] = system(cmd);
             
             try
                 result = jsondecode(result_original);
             catch
-                error('jsondecode error. result_original\n %s',result_original);
+                warning('jsondecode error. result_original\n %s',result_original);
             end
+            
             if ~isempty(result.items)
                 pod = cell(length(result.items),1);
                 for ii=1:length(result.items)
