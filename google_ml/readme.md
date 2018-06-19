@@ -84,6 +84,10 @@ Run following commands in your terminal to access to the instance:
     gcloud config set project machine-driving-20180115
     # SSH to the instance
     gcloud compute ssh --zone=us-west1-b machine-learning
+    
+Upon your first ssh, you need to run a one-time setup script and reload the .bashrc to activate the libraries. The exact command is
+
+    /home/shared/setup.sh && source ~/.bashrc
 
 You are able to configure the number of gpus you like to use, add disk storage to store your datasets [here with gcould GUI](https://console.cloud.google.com/compute/instances?project=machine-driving-20180115). 
 
