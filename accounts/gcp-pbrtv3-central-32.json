@@ -1,0 +1,1 @@
+{"dockerAccount":"vistalab","dockerImage":"gcr.io\/primal-surfer-140120\/pbrt-v3-spectral-gcloud","cloudBucket":"gs:\/\/primal-surfer-140120.appspot.com","clusterName":"pbrtcloud","projectid":"primal-surfer-140120","zone":"us-central1-a","instanceType":"n1-highcpu-32"}

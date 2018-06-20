@@ -79,45 +79,62 @@ classdef gCloud < handle
             
             p = inputParser;
             
-            % ieParamFormat goes here.  Force everything to lower
-            % case and no spaces
+            % Force lower case, no spaces
+            varargin = ieParamFormat(varargin);
+            
+            % File is x.json
+            p.addParameter('configuration','',@(x)(exist([x,'.json'],'file')==2));
+            
             p.addParameter('provider','Google',@ischar);
             p.addParameter('projectid','primal-surfer-140120',@ischar);
-            p.addParameter('clusterName','pbrtcloud',@ischar);
+            p.addParameter('clustername','pbrtcloud',@ischar);
             p.addParameter('zone','us-central1-a',@ischar);
-            p.addParameter('instanceType','n1-highcpu-32',@ischar);
-            p.addParameter('minInstances',1,@isnumeric);
-            p.addParameter('maxInstances',10,@isnumeric);
+            p.addParameter('instancetype','n1-highcpu-32',@ischar);
+            p.addParameter('mininstances',1,@isnumeric);
+            p.addParameter('maxinstances',10,@isnumeric);
             p.addParameter('preemptible',true,@islogical);
             p.addParameter('autoscaling',true,@islogical);
-            p.addParameter('cloudBucket','',@ischar);
-            p.addParameter('dockerImage','',@ischar);
-            p.addParameter('dockerAccount','',@ischar);
-            p.addParameter('renderDepth',false,@islogical);
+            p.addParameter('cloudbucket','',@ischar);
+            p.addParameter('dockerimage','',@ischar);
+            p.addParameter('dockeraccount','',@ischar);
+            p.addParameter('renderdepth',false,@islogical);
             
             p.parse(varargin{:});
             
             obj.provider     = p.Results.provider;
             obj.projectid    = p.Results.projectid;
-            obj.clusterName  = p.Results.clusterName;
+            obj.clusterName  = p.Results.clustername;
             obj.zone         = p.Results.zone;
-            obj.instanceType = p.Results.instanceType;
-            obj.minInstances = p.Results.minInstances;
-            obj.maxInstances = p.Results.maxInstances;
+            obj.instanceType = p.Results.instancetype;
+            obj.minInstances = p.Results.mininstances;
+            obj.maxInstances = p.Results.maxinstances;
             obj.preemptible  = p.Results.preemptible;
             obj.autoscaling  = p.Results.autoscaling;
-            obj.cloudBucket  = p.Results.cloudBucket;
-            obj.dockerImage  = p.Results.dockerImage;
-            obj.dockerAccount  = p.Results.dockerAccount;
-            obj.renderDepth = p.Results.renderDepth;
+            obj.cloudBucket  = p.Results.cloudbucket;
+            obj.dockerImage  = p.Results.dockerimage;
+            obj.dockerAccount= p.Results.dockeraccount;
+            obj.renderDepth  = p.Results.renderdepth;
             
             [status, obj.namespace] = system('echo -n $USER');
-
-            % Call the initialization function.
-            obj.init();
-            
             if status, error('Problem setting name space'); end
             
+            if ~isempty(p.Results.configuration)
+                % For default configurations, we read a json file that is
+                % typically stored in the user's accounts directory.
+                thisAccount = jsonread([p.Results.configuration,'.json']);
+                
+                obj.dockerAccount = thisAccount.dockerAccount;
+                obj.projectid    = thisAccount.projectid;
+                obj.dockerImage  = thisAccount.dockerImage;
+                obj.clusterName  = thisAccount.clusterName;
+                obj.cloudBucket  = thisAccount.cloudBucket;
+                obj.zone         = thisAccount.zone;
+                obj.instanceType = thisAccount.instanceType;
+            end
+            
+            % Go for it
+            obj.init();
+
         end
         
         function [result, status, cmd]=clusterRm(obj)

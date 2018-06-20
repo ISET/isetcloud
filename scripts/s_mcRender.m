@@ -35,31 +35,9 @@ if ~mcDockerExists, mcDockerConfig; end % check whether we can use docker
 if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud sdk;
 
 %% Initialize your cluster
+
 tic
-dockerAccount= 'vistalab';
-
-% This is the docker image we use to render.  The gCloud code checks
-% whether we have it, and if not it pulls from dockerhub to get it.
-dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v3-spectral-gcloud';
-
-% This is where data are stored.
-cloudBucket = 'gs://primal-surfer-140120.appspot.com';
-
-% A convenient name for reference
-clusterName = 'pbrtcloud';
-
-% The Wandell lab has two projects.  For rendering we use this one.
-projectid    = 'primal-surfer-140120';
-
-% These can be set, and here are the defaults
-% zone         = 'us-central1-a';    
-% instanceType = 'n1-highcpu-32';
-
-gcp = gCloud('dockerAccount',dockerAccount,...
-    'projectid',projectid,...
-    'dockerImage',dockerImage,...
-    'clusterName',clusterName,...
-    'cloudBucket',cloudBucket);
+gCloud('configuration','gcp-pbrtv3-central-32');
 toc
 
 %%
@@ -88,30 +66,6 @@ thisR.set('film resolution',256);
 thisR.outputFile = fullfile(mcRootPath,'local','teapot',[n,e]);
 piWrite(thisR);
 
-%% This is the StopSign example in iset3d
-
-%{
-fname = fullfile(piRootPath,'data','V3','StopSign','stop.pbrt');
-if ~exist(fname,'file'), error('File not found'); end
-
-thisR = piRead(fname,'version',3);  % Some warnings here.
-from = thisR.get('from');
-
-% Default is a relatively low resolution (256).
-thisR.set('camera','pinhole');
-thisR.set('from',from + [0 0 100]);  % First left/right, 2nd moved camera closer and to the right 
-thisR.set('film resolution',256);
-thisR.set('rays per pixel',128);
-
-% Set up data for upload
-outputDir = fullfile(piRootPath,'local','stop');
-if ~exist(outputDir,'dir'), mkdir(outputDir); end
-
-[p,n,e] = fileparts(fname); 
-thisR.outputFile = fullfile(outputDir,[n,e]);
-piWrite(thisR);
-%}
-
 %% Upload to the bucket attached to pbrtrendering
 
 % This zips all the files needed for rendering into a single file. Then the
@@ -121,6 +75,7 @@ gcp.uploadPBRT(thisR);
 %{
    % You can list the files in your own part of the bucket this way
    gcp.ls('print',true,'folder','wandell');
+   gcp.ls('print',true,'folder','wandell/teapot-area-light');
 %}
 %% Add the new PBRT rendering target with necessary information
 
