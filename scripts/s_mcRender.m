@@ -47,11 +47,9 @@ str = gcp.Configlist;
 
 %% Data definition
 %
-% The pbrt2ISET code will create a 'target' variable.  This contains
-% the parameters 
-% The task list is stored in the variable 'targets'
-% if you want to assign a different job, ignore this for multi-tasks
-%
+% The isetcloud code creates a set of 'target' variables that describe the
+% renderings we would like to perform.  We clear the variable at the start
+% of this script.
 
 gcp.targets =[];
 
@@ -106,22 +104,15 @@ gcp.Podlog(podname{1});
 
 %% Keep checking for the data, every 5 sec, and download it is there
 
-scene = [];
-while isempty(scene)
-    try
-        scene   = gcp.downloadPBRT(thisR);
-        disp('Data downloaded');
-    catch
-        pause(5);
-    end
-end
-scene_1 = scene{1};
+scene   = gcp.downloadPBRT(thisR);
+disp('Data downloaded');
 
-% Show it in ISET
-ieAddObject(scene_1); sceneWindow;
+% Show the first scene (there is only one in this case) in ISET
+ieAddObject(scene{1}); sceneWindow;
 sceneSet(scene,'gamma',0.5);
 
 %% Remove all jobs
+
 gcp.JobsRmAll();
 
 %% END
