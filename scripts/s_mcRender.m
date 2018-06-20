@@ -92,7 +92,7 @@ gcp.render();
 
 cnt = 0;
 while cnt < length(gcp.targets)
-    cnt = podSucceeded(gcp);
+    [cnt, result] = podSucceeded(gcp);
     pause(5);
 end
 
@@ -102,7 +102,7 @@ gcp.PodDescribe(podname{1})
 gcp.Podlog(podname{1});
 %}
 
-%% Keep checking for the data, every 5 sec, and download it is there
+%% Download and show
 
 scene   = gcp.downloadPBRT(thisR);
 disp('Data downloaded');
@@ -111,7 +111,9 @@ disp('Data downloaded');
 ieAddObject(scene{1}); sceneWindow;
 sceneSet(scene,'gamma',0.5);
 
-%% Remove all jobs
+%% Remove all jobs - I am not really sure what this does.
+
+% I do know that we would like to remove all of the running PODS at times.
 
 gcp.JobsRmAll();
 
