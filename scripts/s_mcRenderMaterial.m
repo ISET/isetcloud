@@ -10,6 +10,12 @@ if ~mcDockerExists, mcDockerConfig; end % check whether we can use docker
 if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud sdk;
 
 %% Initialize your cluster
+
+tic
+gCloud('configuration','gcp-pbrtv3-central-32');
+toc
+
+%{
 tic
 dockerAccount= 'vistalab';
 
@@ -36,7 +42,7 @@ gcp = gCloud('dockerAccount',dockerAccount,...
     'clusterName',clusterName,...
     'cloudBucket',cloudBucket);
 toc
-
+%}
 % Show where
 gcp.targets =[];
 
