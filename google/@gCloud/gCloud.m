@@ -168,7 +168,7 @@ classdef gCloud < handle
             folder = p.Results.folder;
 
             d = obj.cloudBucket;
-            if ~isempty(folder), d = fullfile(d,folder); end
+            if ~isempty(folder), d = fullfile(d, obj.namespace, folder); end
             cmd = sprintf('gsutil ls %s\n',d);
             [status,result] = system(cmd);
             

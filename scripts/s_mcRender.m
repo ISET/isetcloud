@@ -105,8 +105,8 @@ end
 %{
 %  You can get a lot of information about the job this way
 podname = gcp.Podslist
-gcp.PodDescribe(podname{2})
-gcp.Podlog(podname{2});
+gcp.PodDescribe(podname{1})
+gcp.Podlog(podname{1});
 %}
 
 %% Download and show

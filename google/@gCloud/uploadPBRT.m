@@ -133,7 +133,8 @@ if isempty(zipFileName)
     zipFileName = [sceneName,'.zip'];
 end
 
-if exist(fullfile(sceneFolder,zipFileName),'file') && ~overwritezip
+zipFileFullPath = fullfile(sceneFolder,zipFileName);
+if exist(zipFileFullPath,'file') && ~overwritezip
     % Skip zipping
 else
     currentPath = pwd; chdir(sceneFolder);
@@ -162,7 +163,6 @@ else
         zipFileFullPath = '';
         resources = false;
     else
-        zipFileFullPath = fullfile(sceneFolder,zipFileName);
         if ~exist(zipFileFullPath,'file')
             error('Something wrong in producing the zip file %s\n',zipFileFullPath);
         end
@@ -198,7 +198,7 @@ end
 % Do the copy and check
 [status, result] = system(cmd);
 if status
-    error('cp to cloud folder failed\n %s',result);
+    error('cp scene file (and possibly zip file) to cloud bucket failed\n %s',result);
 end
 
 %% Copy geometry and material files
@@ -248,7 +248,26 @@ if(obj.renderDepth)
     
 end
 
-% obj.ls(cloudFolder)
+%% Check if the renderings directory is there.  If not, make it.
+
+cloudFiles = obj.ls('folder',sceneName);
+found = false;
+for ii=1:numel(cloudFiles)
+    [p,n,e] = fileparts(cloudFiles{ii});
+    if strcmp(n,'renderings'), found = true; break; end
+end
+
+if ~found
+    % Create the renderings folder
+    mkdir('renderings');
+    system('touch renderings/keepme');
+    cmd = sprintf('gsutil cp -r renderings %s/',cloudFolder);
+    [status, result] = system(cmd);
+    if status
+        warning('Problem with creating renderings directory');
+        disp(result)
+    end
+end
 
 
 end
