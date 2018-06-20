@@ -89,12 +89,17 @@ addPBRTTarget(gcp,thisR);
 fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
 %% This invokes the PBRT-V3 docker image
+
 gcp.render();
 
-%%  You can get a lot of information about the job this way
+cnt = 0;
+while cnt < length(gcp.targets)
+    cnt = podSucceeded(gcp);
+    pause(5);
+end
 
 %{
-[~,~,~,podname] = gcp.Podslist();
+%  You can get a lot of information about the job this way
 gcp.PodDescribe(podname{1})
 gcp.Podlog(podname{1});
 %}
@@ -114,7 +119,7 @@ scene_1 = scene{1};
 
 % Show it in ISET
 ieAddObject(scene_1); sceneWindow;
-sceneSet(scene,'gamma',1);
+sceneSet(scene,'gamma',0.5);
 
 %% Remove all jobs
 gcp.JobsRmAll();

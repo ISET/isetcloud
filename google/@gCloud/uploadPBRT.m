@@ -80,10 +80,10 @@ p.addParameter('zipfilename','',@ischar);
 p.addParameter('overwritezip',true,@islogical);
 
 % Specify whether we upload a material.pbrt
-p.addParameter('materials',true,@islogical);
+p.addParameter('materials',false,@islogical);   % BW: Made default false
 
 % Specify whether we upload a geometry.pbrt
-p.addParameter('geometry',true,@islogical);
+p.addParameter('geometry',false,@islogical);    % BW: Made default false
 
 % Specify whether we upload the zipped resources file
 p.addParameter('resources',true,@islogical);
@@ -91,7 +91,7 @@ p.addParameter('resources',true,@islogical);
 p.parse(thisR,varargin{:});
 
 overwritezip = p.Results.overwritezip;  % This refers to the local zip
-materials     = p.Results.materials;      % 
+materials    = p.Results.materials;     % If there is a material file
 geometry     = p.Results.geometry;      %
 resources    = p.Results.resources;     % This refers to the cloud zip
 zipFileName  = p.Results.zipfilename;   % This refers to the cloud zip
@@ -197,6 +197,11 @@ end
 
 %% Copy geometry and material files
 
+% BW - The logic here seems flawed to me.  I do not understand how we are
+% using the materials flag and also testing for a material file.  If the
+% file pbrtMaterialFile exists, we should upload it.  There should be only
+% one (or multiple?) material files?  Anyway, we need to deal with this.
+%
 % For materials and geometry we will use a wildcard. These files are
 % usually named after the original pbrt file name, and not scene file named
 % specific in iset3d. In the docker container we also copy over all
@@ -205,7 +210,7 @@ end
 pbrtMaterialFile = fullfile(p,'*_materials.pbrt');
 pbrtGeometryFile = fullfile(p,'*_geometry.pbrt');
 
-if(isempty(dir(pbrtMaterialFile))) || materials
+if(numel(dir(pbrtMaterialFile))) > 0 % || materials
     cmd = sprintf('gsutil cp  %s %s/',pbrtMaterialFile,...
         cloudFolder);
     [status, result] = system(cmd);
@@ -214,7 +219,7 @@ if(isempty(dir(pbrtMaterialFile))) || materials
     end
 end
 
-if(isempty(dir(pbrtGeometryFile))) || geometry
+if(numel(dir(pbrtGeometryFile))) > 0 % || geometry
     cmd = sprintf('gsutil cp  %s %s/',pbrtGeometryFile,...
         cloudFolder);
     [status, result] = system(cmd);

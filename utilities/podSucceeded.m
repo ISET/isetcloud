@@ -29,7 +29,7 @@ p.parse(obj,varargin{:});
 
 %%
 cnt = 0;
-result = obj.Podslist(obj,'print',false);
+result = obj.Podslist('print',false);
 nPODS = length(result.items);
 for ii=1:nPODS
    if isequal(result.items(ii).status.phase,'Succeeded')
