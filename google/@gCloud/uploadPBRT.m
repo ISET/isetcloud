@@ -79,11 +79,11 @@ p.addParameter('zipfilename','',@ischar);
 % Specify whether we overwrite the zip resources file
 p.addParameter('overwritezip',true,@islogical);
 
-% Specify whether we upload a material.pbrt
-p.addParameter('materials',false,@islogical);   % BW: Made default false
+% Specify whether we upload a *_materials.pbrt
+p.addParameter('materials',true,@islogical);  
 
-% Specify whether we upload a geometry.pbrt
-p.addParameter('geometry',false,@islogical);    % BW: Made default false
+% Specify whether we upload a *_geometry.pbrt
+p.addParameter('geometry',true,@islogical); 
 
 % Specify whether we upload the zipped resources file
 p.addParameter('resources',true,@islogical);
@@ -91,8 +91,8 @@ p.addParameter('resources',true,@islogical);
 p.parse(thisR,varargin{:});
 
 overwritezip = p.Results.overwritezip;  % This refers to the local zip
-materials    = p.Results.materials;     % If there is a material file
-geometry     = p.Results.geometry;      %
+materials    = p.Results.materials;     % Upload materials files (logical)
+geometry     = p.Results.geometry;      % Upload geometry files (logical)
 resources    = p.Results.resources;     % This refers to the cloud zip
 zipFileName  = p.Results.zipfilename;   % This refers to the cloud zip
 
@@ -102,7 +102,8 @@ if(obj.renderDepth)
     depthRecipe = piRecipeConvertToMetadata(thisR,'metadata','depth');
     
     % Always overwrite the depth file, but don't copy over the whole directory
-    piWrite(depthRecipe,'overwritepbrtfile',true,...
+    piWrite(depthRecipe,...
+        'overwritepbrtfile',true,...
         'overwritelensfile',false,...
         'overwriteresources',false);
 end
@@ -154,14 +155,17 @@ else
     cmd = sprintf('zip -r %s %s -x *.jpg *.pbrt renderings/* *.zip',zipFileName,allFiles);
     status = system(cmd);
     
-    % When there are no resource files, the zip file is empty
+    % When there are no resource files, the zip file is empty and status is
+    % true.
     if status
         warning('No files zipped. Assuming empty.');
-        zipFileName = '';
-    end
-    zipFileFullPath = fullfile(sceneFolder,zipFileName);
-    if ~exist(zipFileFullPath,'file')
-        error('Something wrong in producing the zip file %s\n',zipFileFullPath);
+        zipFileFullPath = '';
+        resources = false;
+    else
+        zipFileFullPath = fullfile(sceneFolder,zipFileName);
+        if ~exist(zipFileFullPath,'file')
+            error('Something wrong in producing the zip file %s\n',zipFileFullPath);
+        end
     end
     
     cd(currentPath);  % Return
@@ -176,16 +180,18 @@ if ~exist(pbrtSceneFile,'file')
     error('Could not find pbrt scene file %s\n',pbrtSceneFile);
 end
 
+% Build the command for uploading resources and scene file
 cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
-if isempty(zipFileName) || ~resources
-    % Either no zip file or we are told not to upload the zip.
-    % So we only copy the pbrt scene file
-    cmd = sprintf('gsutil cp  %s %s/',pbrtSceneFile,...
+if resources
+    % We want to copy the resources
+    % Copy the zip file and the pbrt file
+    cmd = sprintf('gsutil cp %s %s %s/',  ...
+        zipFileFullPath,...
+        pbrtSceneFile,...
         cloudFolder);
 else
-    % Copy the zip file and the pbrt file
-    cmd = sprintf('gsutil cp %s %s %s/',  fullfile(sceneFolder,zipFileName),...
-        pbrtSceneFile,...
+    % No resources for upload.  Command sends up only PBRT scene file
+    cmd = sprintf('gsutil cp  %s %s/',pbrtSceneFile,...
         cloudFolder);
 end
 
@@ -210,7 +216,7 @@ end
 pbrtMaterialFile = fullfile(p,'*_materials.pbrt');
 pbrtGeometryFile = fullfile(p,'*_geometry.pbrt');
 
-if(numel(dir(pbrtMaterialFile))) > 0 % || materials
+if(numel(dir(pbrtMaterialFile))) > 0 && materials
     cmd = sprintf('gsutil cp  %s %s/',pbrtMaterialFile,...
         cloudFolder);
     [status, result] = system(cmd);
@@ -219,7 +225,7 @@ if(numel(dir(pbrtMaterialFile))) > 0 % || materials
     end
 end
 
-if(numel(dir(pbrtGeometryFile))) > 0 % || geometry
+if(numel(dir(pbrtGeometryFile))) > 0 && geometry
     cmd = sprintf('gsutil cp  %s %s/',pbrtGeometryFile,...
         cloudFolder);
     [status, result] = system(cmd);

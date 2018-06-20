@@ -43,7 +43,10 @@ toc
 %%
 % This prints out a summary of the situation.  The command returns a struct
 % with the various fields, as well.
-str = gcp.Configlist;
+gcp.Configlist;
+
+% This should be 'no resources found'
+str = gcp.Podslist;
 
 %% Data definition
 %
@@ -51,6 +54,7 @@ str = gcp.Configlist;
 % renderings we would like to perform.  We clear the variable at the start
 % of this script.
 
+% This will be 'jobs' some day.
 gcp.targets =[];
 
 %% This is the teapot example in iset3d
@@ -83,6 +87,8 @@ if ~isempty(gcp.targets)
     fprintf('%d current targets\n',length(gcp.targets));
 end
 
+% This should be gcp.addJob('pbrt',thisR);
+% We might have other types of jobs in the future.
 addPBRTTarget(gcp,thisR);
 fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
@@ -98,8 +104,9 @@ end
 
 %{
 %  You can get a lot of information about the job this way
-gcp.PodDescribe(podname{1})
-gcp.Podlog(podname{1});
+podname = gcp.Podslist
+gcp.PodDescribe(podname{2})
+gcp.Podlog(podname{2});
 %}
 
 %% Download and show
@@ -113,8 +120,17 @@ sceneSet(scene,'gamma',0.5);
 
 %% Remove all jobs - I am not really sure what this does.
 
-% I do know that we would like to remove all of the running PODS at times.
-
+% When we run a target job, it will create a kubernetes POD that may
+% require a new Node.  For example, the PBRT target jobs ask for a resource
+% that has 31 cores, and so a new Node is always created when we run a
+% target job.
+%
+% Sometimes a job sits around and does not complete.  It is then restarted
+% (by default) by kubernetes.  This always starts up a new Node.
+%
+% To clear out all the PODS (which are created by the targets/jobs) you can
+% use this command.  I wonder if this should be labeled differently.  Maybe
+% 'targets' should be 'jobs'.  Or maybe even PODS.
 gcp.JobsRmAll();
 
 %% END

@@ -346,7 +346,7 @@ classdef gCloud < handle
             end
         end
         
-        function [result,status,cmd,pod] = Podslist(obj, varargin)
+        function [pod,result,status,cmd] = Podslist(obj, varargin)
             % List the status of the kubernetes pods, the smallest
             % deployable instance of a running process in the cluster. PODS
             % typically run in a Node.  Often there is one POD per node, if

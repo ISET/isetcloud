@@ -1,8 +1,8 @@
-function [cnt,result] = podSucceeded(obj,varargin)
+function [cnt,result,podnames] = podSucceeded(obj,varargin)
 % Count how many of the kubernetes (PODS) have finished
 %
 % Syntax
-%   [cnt, result] = podSucceeded(obj)
+%   [cnt, result, podnames] = podSucceeded(obj)
 %
 % Description
 %    We set up processes to run in the cluster. This routine counts how
@@ -39,7 +39,7 @@ p.parse(obj,varargin{:});
 
 %%
 cnt = 0;
-result = obj.Podslist('print',false);
+[podnames,result] = obj.Podslist('print',false);
 nPODS = length(result.items);
 for ii=1:nPODS
     if p.Results.print
