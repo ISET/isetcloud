@@ -37,7 +37,7 @@ if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud 
 %% Initialize your cluster
 
 tic
-gCloud('configuration','gcp-pbrtv3-central-32');
+gcp = gCloud('configuration','gcp-pbrtv3-central-32');
 toc
 
 %%

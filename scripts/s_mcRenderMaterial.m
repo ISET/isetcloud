@@ -12,42 +12,14 @@ if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud 
 %% Initialize your cluster
 
 tic
-gCloud('configuration','gcp-pbrtv3-central-32');
+gcp = gCloud('configuration','gcp-pbrtv3-central-32');
 toc
 
-%{
-tic
-dockerAccount= 'vistalab';
-
-% This is the docker image we use to render.  The gCloud code checks
-% whether we have it, and if not it pulls from dockerhub to get it.
-dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v3-spectral-gcloud';
-
-% This is where data are stored.
-cloudBucket = 'gs://primal-surfer-140120.appspot.com';
-
-% A convenient name for reference
-clusterName = 'pbrtcloud';
-
-% The Wandell lab has two projects.  For rendering we use this one.
-projectid    = 'primal-surfer-140120';
-
-% These can be set, and here are the defaults
-% zone         = 'us-central1-a';    
-% instanceType = 'n1-highcpu-32';
-
-gcp = gCloud('dockerAccount',dockerAccount,...
-    'projectid',projectid,...
-    'dockerImage',dockerImage,...
-    'clusterName',clusterName,...
-    'cloudBucket',cloudBucket);
-toc
-%}
 % Show where
 gcp.targets =[];
 
 % Show where we stand
-str = gcp.Configlist;
+str = gcp.configList;
 
 %% Read pbrt_material files
 FilePath = fullfile(piRootPath,'data','V3','SimpleScene');

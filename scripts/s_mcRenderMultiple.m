@@ -34,6 +34,17 @@ if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud 
 
 %% Initialize your cluster
 tic
+gcp = gCloud('configuration','gcp-pbrtv3-central-32');
+toc
+
+% Show where
+gcp.targets =[];
+
+% Show where we stand
+str = gcp.configList;
+
+%{
+tic
 dockerAccount= 'vistalab';
 
 % This is the docker image we use to render.  The gCloud code checks
@@ -59,11 +70,7 @@ gcp = gCloud('dockerAccount',dockerAccount,...
     'clusterName',clusterName,...
     'cloudBucket',cloudBucket);
 toc
-
-%%
-% This prints out a summary of the situation.  The command returns a struct
-% with the various fields, as well.
-str = gcp.Configlist;
+%}
 
 %% Multiple scene definitions
 
@@ -134,8 +141,6 @@ while cnt < length(gcp.targets)
     cnt = podSucceeded(gcp);
     pause(5);
 end
-
-%%  You can get a lot of information about the job this way
 
 %{
 gcp.PodDescribe(podname{1})
