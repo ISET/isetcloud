@@ -250,6 +250,8 @@ end
 
 %% Check if the renderings directory is there.  If not, make it.
 
+%{
+% There should be a renderings folder.  We are not sure who creates it.
 cloudFiles = obj.ls('folder',sceneName);
 found = false;
 for ii=1:numel(cloudFiles)
@@ -268,7 +270,7 @@ if ~found
         disp(result)
     end
 end
-
+%}
 
 end
 

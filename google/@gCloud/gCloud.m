@@ -234,12 +234,18 @@ classdef gCloud < handle
             [status, result] = system(cmd);
         end
         
-        function [result, status, cmd] = Configlist(~)
-            % Display current configuration
+        function [result, status, cmd] = configList(obj,varargin)
+            % Display configuration for current cluster and account
+            p = inputParser;
+            p.addRequired('obj',@(x)(isa(x,'gCloud')));
+            p.addParameter('name',obj.clusterName,@ischar);
+            p.parse(obj,varargin{:});
+            name = p.Results.name;
+            
             % Get information about the clusters from the gcloud container
             cmd = sprintf('gcloud container clusters list --format=json');
-            [~, result_clusters]=system(cmd);
-            result_clusters=jsondecode(result_clusters);
+            [~, result_clusters] = system(cmd);
+            result_clusters = jsondecode(result_clusters);
             
             % We only preserve some fields.  These we delete.
             fields = {'addonsConfig','clusterIpv4Cidr','currentMasterVersion',...
@@ -251,6 +257,11 @@ classdef gCloud < handle
             result_clusters = orderfields(result_clusters, ...
                 {'name', 'zone', 'status','createTime','currentNodeCount'});
             
+            % We only want the cluster associated with this GCP name
+            idx = strcmp(name,{result_clusters(:).name});
+            result_clusters = result_clusters(idx);
+            
+            % Now get the configuration of the cluster
             cmd = sprintf('gcloud config list --format=json');
             [status, result_configuration] = system(cmd);
             result_configuration=jsondecode(result_configuration);

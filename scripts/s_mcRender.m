@@ -43,7 +43,7 @@ toc
 %%
 % This prints out a summary of the situation.  The command returns a struct
 % with the various fields, as well.
-gcp.Configlist;
+gcp.configList('name',gcp.clusterName);
 
 % This should be 'no resources found'
 str = gcp.Podslist;
@@ -59,8 +59,8 @@ gcp.targets =[];
 
 %% This is the teapot example in iset3d
 
-fName = fullfile(piRootPath,'data','teapot-area','teapot-area-light.pbrt');
-thisR = piRead(fName);
+fName = fullfile(piRootPath,'data','V3','teapot','teapot-area-light.pbrt');
+thisR = piRead(fName,'version',3);
 thisR.set('camera','pinhole');
 thisR.set('rays per pixel',32);
 thisR.set('film resolution',256);
