@@ -51,9 +51,8 @@ str = gcp.configList;
 
 gcp.targets =[];
 
-%% This is the StopSign example in iset3d
+%% Set up the StopSign example
 
-% The first target is the stop sign.
 fname = fullfile(piRootPath,'data','V3','StopSign','stop.pbrt');
 if ~exist(fname,'file'), error('File not found'); end
 
@@ -65,7 +64,7 @@ thisR.set('camera','pinhole');
 thisR.set('film resolution',256);
 thisR.set('rays per pixel',128);
 
-% Set up data for upload
+% Set up data for piWrite
 outputDir = fullfile(mcRootPath,'local','stop');
 if ~exist(outputDir,'dir'), mkdir(outputDir); end
 
@@ -73,25 +72,21 @@ if ~exist(outputDir,'dir'), mkdir(outputDir); end
 thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,1,e));
 piWrite(thisR);
 
-% Set parameters for multiple scenes, same geometry and materials
-gcp.uploadPBRT(thisR);  
+% Upload based on the recipe
+gcp.uploadPBRT(thisR);
+
+% This is always the first job
 addPBRTTarget(gcp,thisR,'replace',1);
 fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
 %% Change the lookAt for the stop sign
 
-% First dimension is right-left
-% Second dimension is towards the object.
+% First dimension is right-left; second dimension is towards the object.
 % The up direction is specified in lookAt.up
 for jj=1:5
     thisR.set('from',from + [0 0 jj]);
-    thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));
-    
+    thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));   
     piWrite(thisR);   % This lookAt case only modifies the scene file
-    
-    % This will create a new material file, to change the material, see
-    % t_piMaterialChange.m in iset3d
-    % piWrite(thisR, 'creatematerials',true)
     
     % Call this upload so all that we add is stop-2.pbrt, we do not upload the
     % geometry and materials and other stuff again.
