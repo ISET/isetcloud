@@ -84,7 +84,9 @@ fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 % First dimension is right-left; second dimension is towards the object.
 % The up direction is specified in lookAt.up
 for jj=1:5
-    thisR.set('from',from + [0 0 jj]);
+    
+    % We move only a small amount so it looks a little like a video
+    thisR.set('from',from + [0 0 jj/3]);
     thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));   
     piWrite(thisR);   % This lookAt case only modifies the scene file
     
