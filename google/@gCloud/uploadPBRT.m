@@ -221,7 +221,7 @@ if(numel(dir(pbrtMaterialFile))) > 0 && materials
         cloudFolder);
     [status, result] = system(cmd);
     if status
-        Warning('Material file cp to cloud folder failed\n %s',result);
+        warning('Material file cp to cloud folder failed\n %s',result);
     end
 end
 

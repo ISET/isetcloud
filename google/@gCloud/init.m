@@ -42,7 +42,7 @@ if ~strcmp(result, obj.projectid)
     cmd = sprintf('gcloud config get-value project');
     [~, result] = system(cmd);
 end
-fprintf('Project is set to %s\n',result(1:end-1));
+fprintf('Project is set to %s\n',result);
 
 %% List and possibly create the cluster
 
