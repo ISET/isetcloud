@@ -35,10 +35,7 @@ if ~mcDockerExists, mcDockerConfig; end % check whether we can use docker
 if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud sdk;
 
 %% Initialize your cluster
-
-tic
 gcp = gCloud('configuration','gcp-pbrtv3-central-32');
-toc
 
 %%
 % This prints out a summary of the situation.  The command returns a struct
@@ -61,9 +58,11 @@ gcp.targets =[];
 
 fName = fullfile(piRootPath,'data','V3','teapot','teapot-area-light.pbrt');
 thisR = piRead(fName,'version',3);
+
 thisR.set('camera','pinhole');
 thisR.set('rays per pixel',32);
 thisR.set('film resolution',256);
+
 [p,n,e] = fileparts(fName); 
 thisR.outputFile = fullfile(mcRootPath,'local','teapot',[n,e]);
 piWrite(thisR);

@@ -33,9 +33,7 @@ if ~mcDockerExists, mcDockerConfig; end % check whether we can use docker
 if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud sdk;
 
 %% Initialize your cluster
-tic
 gcp = gCloud('configuration','gcp-pbrtv3-central-32');
-toc
 
 % Show where
 gcp.targets =[];
@@ -48,16 +46,12 @@ str = gcp.configList;
 % The isetcloud code will upload an run a number of 'target' scenes, each
 % defined by their own parameters. The list if targets is stored in the
 % variable 'targets'.  We start out by emptying the list.
-
 gcp.targets =[];
 
 %% Set up the StopSign example
 
 fname = fullfile(piRootPath,'data','V3','StopSign','stop.pbrt');
-if ~exist(fname,'file'), error('File not found'); end
-
 thisR = piRead(fname,'version',3);  % Some warnings here.
-from = thisR.get('from');
 
 % Default is a relatively low resolution (256).
 thisR.set('camera','pinhole');
@@ -83,10 +77,11 @@ fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
 % First dimension is right-left; second dimension is towards the object.
 % The up direction is specified in lookAt.up
+from = thisR.get('from');
 for jj=1:5
     
     % We move only a small amount so it looks a little like a video
-    thisR.set('from',from + [0 0 jj/3]);
+    thisR.set('from',from + [0 jj/3 0]);
     thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));   
     piWrite(thisR);   % This lookAt case only modifies the scene file
     
@@ -98,7 +93,6 @@ for jj=1:5
 end
 
 %% Describe the targets
-
 gcp.targetsList;
 
 %% This invokes the PBRT-V3 docker image
