@@ -153,7 +153,7 @@ else
     % Zip recursively but excluding certain file types and any other
     % zip files that might have been put here.
     fprintf('Zipping into %s\n',zipFileName);
-    cmd = sprintf('zip -r %s %s -x *.jpg *.pbrt renderings/* *.zip',zipFileName,allFiles);
+    cmd = sprintf('zip -r %s %s  *.pbrt renderings/* *.zip -x *.jpg',zipFileName,allFiles);
     status = system(cmd);
     
     % When there are no resource files, the zip file is empty and status is
