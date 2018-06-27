@@ -425,9 +425,14 @@ classdef gCloud < handle
         
         function [result, status, cmd] = jobsDelete(obj)
             % Deletes all of the running jobs
+            %
+            
+            % Might want to turn off printout
             cmd = sprintf('kubectl delete jobs --all --namespace=%s',obj.namespace);
+            
+            fprintf('Deleting all jobs in name space %s',obj.namespace)
             [status, result] = system(cmd);
-            if status, warning('Jobs are not correctly deleted\n'); end
+            if status, warning('Jobs not correctly deleted\n'); end
             fprintf('%s\n',result);
         end
         
