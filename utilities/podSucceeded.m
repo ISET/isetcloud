@@ -5,9 +5,11 @@ function [cnt,result,podnames] = podSucceeded(obj,varargin)
 %   [cnt, result, podnames] = podSucceeded(obj)
 %
 % Description
-%    We set up processes to run in the cluster. This routine counts how
-%    many processes have Succeeded.  The routine is used in a loop to wait
-%    for completion of all the jobs
+%    This routine counts how many PODS have Succeeded.  The routine is
+%    used in a loop to wait for completion of all the jobs. In some
+%    cases, there are 0 PODS and thus 0 Succeeded.  I suppose this
+%    happens because the job is removed before we see the 'Succeeded'
+%    string.  In that case we should return something helpful, not 0.
 %
 % Inputs
 %   obj:  A gCloud object
@@ -41,17 +43,24 @@ p.parse(obj,varargin{:});
 cnt = 0;
 [podnames,result] = obj.Podslist('print',false);
 nPODS = length(result.items);
-for ii=1:nPODS
-    if p.Results.print
-        fprintf('%s\n',result.items(ii).status.phase);
-    end
-    if isequal(result.items(ii).status.phase,'Succeeded')
-        cnt = cnt + 1;
+if nPODS == 0
+    % This is the case in which we lost our PODS.  We should do
+    % something better.  But this solves one case.  A deeper solution
+    % is needed. (BW).
+    cnt = cnt + 1;
+else
+    for ii=1:nPODS
+        if p.Results.print
+            fprintf('%s\n',result.items(ii).status.phase);
+        end
+        if isequal(result.items(ii).status.phase,'Succeeded')
+            cnt = cnt + 1;
+        end
     end
 end
 
 if p.Results.print
-    fprintf('Found %d PODS. N Succeeded = %d\n',nPODS,cnt); 
+    fprintf('Found %d PODS. N Succeeded = %d\n',nPODS,cnt);
     fprintf('------------\n');
 end
 
