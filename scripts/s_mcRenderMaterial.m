@@ -85,8 +85,8 @@ gcp.render();
 
 cnt = 0;
 while cnt < length(gcp.targets)
-    cnt = podSucceeded(gcp);
     pause(5);
+    cnt = gcp.jobsStatus;
 end
 
 %%  You can get a lot of information about the job this way
@@ -109,6 +109,6 @@ sceneWindow;
 sceneSet(scene,'gamma',0.5);
 
 %% Remove all jobs
-gcp.JobsRmAll();
+gcp.jobsDelete();
 
 %%

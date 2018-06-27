@@ -35,9 +35,6 @@ if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud 
 %% Initialize your cluster
 gcp = gCloud('configuration','gcp-pbrtv3-central-32');
 
-% Show where
-gcp.targets =[];
-
 % Show where we stand
 str = gcp.configList;
 
@@ -81,7 +78,7 @@ from = thisR.get('from');
 for jj=1:5
     
     % We move only a small amount so it looks a little like a video
-    thisR.set('from',from + [0 jj/3 0]);
+    thisR.set('from',from + [0 jj/50 0]);
     thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));   
     piWrite(thisR);   % This lookAt case only modifies the scene file
     
@@ -100,15 +97,9 @@ gcp.render();
 
 cnt = 0;
 while cnt < length(gcp.targets)
-    cnt = podSucceeded(gcp);
     pause(5);
+    cnt = gcp.jobsStatus;
 end
-
-%{
-podname = gcp.Podslist;
-gcp.PodDescribe(podname{1})
-gcp.Podlog(podname{1});
-%}
 
 %% Keep checking for the data, every 15 sec, and download it is there
 
@@ -123,7 +114,7 @@ sceneWindow;
 sceneSet(scene,'gamma',0.5);
 
 %% Remove all jobs
-gcp.JobsRmAll();
+gcp.jobsDelete();
 
 %% END
 

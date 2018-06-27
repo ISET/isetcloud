@@ -305,50 +305,110 @@ classdef gCloud < handle
         
         %% kubectl related methods
         
-        function [result,status,cmd] = listJobs(obj,varargin)
-            % List the jobs in a specific name space or in all name spaces
-            % We parse the varargin tp find one particular name space
+        function [result,status,cmd] = jobsList(obj,varargin)
+            % List the running jobs in a specific name space or in all
+            % name spaces.
+            % 
+            % Optional key/value
+            %  'name space' - User name space to check
+            %
+            % obj.jobsList('name space','wandell')
+            %
+            % See also
+            %   obj.jobsDelete
+            
+            %%
             p = inputParser;
             varargin = ieParamFormat(varargin);
             p.addParameter('namespace',obj.namespace,@ischar);
             p.parse(varargin{:});
             thisNameSpace = p.Results.namespace;
             
-            %%
+            %% Run kubectl
             if strcmp(thisNameSpace,'all')
-                cmd = sprintf('kubectl get jobs --all-namespaces');
+                cmd = sprintf('kubectl get jobs --all-namespaces -o json');
             else
-                cmd = sprintf('kubectl get jobs --namespace=%s',thisNameSpace);
+                cmd = sprintf('kubectl get jobs --namespace=%s -o json',thisNameSpace);
             end
             
-            [status,result] = system(cmd);
+            [status,result] = system(cmd);            
             if status
                 error('Name space read error\n%s\n',result);
+            else
+                result = jsondecode(result);
             end
         end
         
-        function [result, status, cmd] = checkJobs(obj, varargin)
-            % Prints out a summary of the jobs that are running
+        function [nSucceeded,jobs] = jobsStatus(obj, varargin)
+            % Report on the status of the kubernetes jobs
+            %
+            % Syntax
+            %   [nSucceeded,jobs] = obj.jobsStatus
+            %
+            % Key/value options
+            %   'print'  - Printout a summary if true
+            %
+            % Returns
+            %   nSucceeded - number of jobs with status succeeded
+            %   jobs  - the struct of all the jobs returned by kubectl
+            %
+            % The code might be used like this
+            %
+            %  cnt = 0;
+            %  while cnt < length(gcp.targets)
+            %    cnt = obj.jobsStatus;
+            %    pause(5);
+            %  end
+            %
+            % ZL/BW, Vistasoft team, 2018
+            %
+            % See also
+            %
+            
+            %%
             p = inputParser;
             varargin = ieParamFormat(varargin);
             p.addParameter('namespace',obj.namespace,@ischar);
+            p.addParameter('print',true,@islogical);
+            
             p.parse(varargin{:});
+            
             thisNameSpace = p.Results.namespace;
             
-            %%
+            %% Run kubectl
             cmd = sprintf('kubectl get jobs --namespace=%s -o json',thisNameSpace);
             [status,result] = system(cmd);
             if status
                 error('Name space read error\n%s\n',result);
+            else
+                jobs = jsondecode(result);
             end
-            
-            result = jsondecode(result);
-            NumofJobs = sum(~cellfun(@isempty,{result.items}));
-            NumofJobs = NumofJobs - 1;
-            fprintf('%d job to be done \n', NumofJobs);
+            nJobs = length(jobs.items);
+
+            % Calculate the number that were successful
+            nSucceeded = 0;
+            for ii=1:nJobs
+                if jobs.items(ii).status.succeeded == 1
+                    nSucceeded = nSucceeded + 1;
+                end
+            end
+
+            % Tell the user
+            if p.Results.print
+                fprintf('Found %d jobs. N Succeeded = %d\n',nJobs,nSucceeded);
+                fprintf('------------\n');
+            end
         end
         
-        function [result,status,cmd] = listNames(~,varargin)
+        function [result, status, cmd] = jobsDelete(obj)
+            % Deletes all of the running jobs
+            cmd = sprintf('kubectl delete jobs --all --namespace=%s',obj.namespace);
+            [status, result] = system(cmd);
+            if status, warning('Jobs are not correctly deleted\n'); end
+            fprintf('%s\n',result);
+        end
+        
+        function [result,status,cmd] = namespaceList(~,varargin)
             % List all the name spaces currently on the cluster
             cmd = sprintf('kubectl get namespaces');
             [status,result] = system(cmd);
@@ -357,19 +417,30 @@ classdef gCloud < handle
             end
         end
         
-        function [pod,result,status,cmd] = Podslist(obj, varargin)
+        function [pod,result,status,cmd] = podsList(obj, varargin)
             % List the status of the kubernetes pods, the smallest
-            % deployable instance of a running process in the cluster. PODS
-            % typically run in a Node.  Often there is one POD per node, if
-            % the resources to run the POD is matched to what is available
-            % on a single node.
+            % deployable instance of a running process in the cluster. 
+            % 
+            % PODS typically run in a Node.  Often there is one POD
+            % per node, if the resources to run the POD is matched to
+            % what is available on a single node.
+            %
+            % If you think the status should be initialized and no
+            % PODS are running, then the return would be 'No resources
+            % found'.
+            
+            %% Read input parameters
             p = inputParser;
             p.addRequired('obj',@(x)(isa(x,'gCloud')));
             p.addParameter('print',true,@islogical);
             p.parse(obj,varargin{:});
+            
+            % Invoke kubernetes
             cmd = sprintf('kubectl get pods --namespace=%s -o json',obj.namespace);
             [status, result_original] = system(cmd);
+            if status, warning('Did not read pods correctly'); end
             
+            % Decode the json return data
             try
                 result = jsondecode(result_original);
             catch
@@ -380,15 +451,14 @@ classdef gCloud < handle
                 pod = cell(length(result.items),1);
                 for ii=1:length(result.items)
                     podname= result.items(ii).metadata.name;
-                    if p.Results.print,fprintf('%s is %s \n', podname, result.items(ii).status.phase); end
+                    if p.Results.print
+                        fprintf('%s is %s \n', podname, result.items(ii).status.phase); 
+                    end
                     pod{ii}=podname;
                 end
             else
                 fprintf('No resources found\n');
                 pod = [];
-            end
-            if status
-                warning('Did not read pds correctly');
             end
         end
         
@@ -404,12 +474,7 @@ classdef gCloud < handle
                 fprintf('%s\n',result);
         end
         
-        function [result, status, cmd] = JobsRmAll(obj)
-            cmd = sprintf('kubectl delete jobs --all --namespace=%s',obj.namespace);
-                [status, result] = system(cmd);
-            if status, warning('Jobs are not correctly deleted\n'); end
-            fprintf('%s\n',result);
-        end
+
             
     end
 end

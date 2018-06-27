@@ -43,7 +43,7 @@ gcp = gCloud('configuration','gcp-pbrtv3-central-32');
 gcp.configList('name',gcp.clusterName);
 
 % This should be 'no resources found'
-str = gcp.Podslist;
+str = gcp.podsList;
 
 %% Data definition
 %
@@ -97,16 +97,9 @@ gcp.render();
 
 cnt = 0;
 while cnt < length(gcp.targets)
-    [cnt, result] = podSucceeded(gcp);
     pause(5);
+    cnt = gcp.jobsStatus;
 end
-
-%{
-%  You can get a lot of information about the job this way
-podname = gcp.Podslist
-gcp.PodDescribe(podname{1})
-gcp.Podlog(podname{1});
-%}
 
 %% Download and show
 
@@ -130,7 +123,7 @@ sceneSet(scene,'gamma',0.5);
 % To clear out all the PODS (which are created by the targets/jobs) you can
 % use this command.  I wonder if this should be labeled differently.  Maybe
 % 'targets' should be 'jobs'.  Or maybe even PODS.
-gcp.JobsRmAll();
+gcp.jobsDelete();
 
 %% END
 
