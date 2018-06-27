@@ -43,7 +43,7 @@ gcp = gCloud('configuration','gcp-pbrtv3-central-32');
 gcp.configList('name',gcp.clusterName);
 
 % This should be 'no resources found'
-str = gcp.podsList;
+% str = gcp.podsList;
 
 %% Data definition
 %

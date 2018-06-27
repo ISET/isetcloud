@@ -320,8 +320,12 @@ classdef gCloud < handle
             %%
             p = inputParser;
             varargin = ieParamFormat(varargin);
+            
             p.addParameter('namespace',obj.namespace,@ischar);
+            p.addParameter('print',true,@islogical);
+            
             p.parse(varargin{:});
+            
             thisNameSpace = p.Results.namespace;
             
             %% Run kubectl
@@ -336,7 +340,22 @@ classdef gCloud < handle
                 error('Name space read error\n%s\n',result);
             else
                 result = jsondecode(result);
+                if p.Results.print
+                    % This is a printable listing.  I guess we could
+                    % build it ourselves from results
+                    fprintf('\n');
+                    fprintf(['NAME',repmat(' ',1,48),'STATUS   SUCCESSFUL   START',repmat(' ',1,18),'STOP\n']);
+                    for ii=1:length(result.items)
+                        fprintf('%s ',result.items(ii).metadata.name);
+                        fprintf('%s ',result.items(ii).status.conditions.type);
+                        fprintf('\t%d ',result.items(ii).status.succeeded);
+                        fprintf('\t%s ',result.items(ii).status.startTime );
+                        fprintf('\t%s\n',result.items(ii).status.completionTime);
+                    end
+                    fprintf('\n');
+                end
             end
+                        
         end
         
         function [nSucceeded,jobs] = jobsStatus(obj, varargin)
@@ -388,8 +407,12 @@ classdef gCloud < handle
             % Calculate the number that were successful
             nSucceeded = 0;
             for ii=1:nJobs
-                if jobs.items(ii).status.succeeded == 1
-                    nSucceeded = nSucceeded + 1;
+                % Sometimes we get stray jobs here that have not been
+                % started. They have no slot for succeeded.
+                if isfield(jobs.items(ii).status,'succeeded')
+                    if jobs.items(ii).status.succeeded == 1
+                        nSucceeded = nSucceeded + 1;
+                    end
                 end
             end
 

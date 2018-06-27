@@ -5,11 +5,11 @@ function [ obj ] = render( obj )
 %   gcp.render;
 %
 % Description
-%   The targets slot of the obj contains the specific jobs that we want to start
-%   up on the cluster.  The other slots include the information about
-%   the cluster.
+%   The obj contains a slot, targets, that lists the specific jobs
+%   that we want to start up on the cluster.  This render method
+%   starts a job for each of the targets.
 %
-% ZL
+% ZL, Vistasoft Team, 2018
 %
 % See also:  
 %   s_mcRender
