@@ -152,12 +152,15 @@ else
     
     % Zip recursively so that renderings/ is there
     % but exclude
+    %   contents of the renderings folder
+    %   zip files
     %   jpg files - 
-    %   zip files - I do not think so ... check
-    % that might be there.  If the zipFileName is already there, this
-    % command updates it.
+    %   zip files 
+    %   pbrt files
+    % If output file (zipFileName) is already present, this command
+    % updates the file contents.
     fprintf('Zipping into %s\n',zipFileName);
-    cmd = sprintf('zip -r %s %s  *.pbrt renderings/* *.zip -x *.jpg',zipFileName,allFiles);
+    cmd = sprintf('zip -r %s %s -x renderings/*  *.zip *.jpg *.pbrt',zipFileName,allFiles);
     status = system(cmd);
     
     % When there are no resource files, the zip file is empty and status is
