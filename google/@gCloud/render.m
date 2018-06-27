@@ -30,7 +30,7 @@ for t=1:length(obj.targets)
     kubeCmd = sprintf('kubectl delete job --namespace=%s %s',obj.namespace,jobName);
     [status, result] = system(kubeCmd);
     if status
-        if contains('NotFound',result)
+        if contains(result,'NotFound')
             % Ignore the status.  We tried to delete something that
             % did not exist.
         else

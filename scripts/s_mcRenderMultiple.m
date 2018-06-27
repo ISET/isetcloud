@@ -78,7 +78,7 @@ from = thisR.get('from');
 for jj=1:5
     
     % We move only a small amount so it looks a little like a video
-    thisR.set('from',from + [0 jj/50 0]);
+    thisR.set('from',from + [jj/75 jj/75 0]);
     thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));   
     piWrite(thisR);   % This lookAt case only modifies the scene file
     

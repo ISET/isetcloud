@@ -137,16 +137,25 @@ classdef gCloud < handle
 
         end
         
-        function [result, status, cmd]=clusterRm(obj)
-            % Shut down and remove a k8s cluster
+        function [result, status, cmd]=clusterDelete(obj)
+            % Shut down and delete a k8s cluster
+            %
+            % ZL
+            %
+            % See also
+            
             fprintf('Removing the cluster %s\n',obj.clusterName);
-            fprintf('This can take a 3 or even 5 of minutes\n');
             if notDefined('zone')
                 cmd = sprintf('gcloud container clusters delete %s --zone=%s',obj.clusterName,obj.zone);
             else
                 cmd = sprintf('gcloud container clusters delete %s --zone=%s',obj.clusterName,obj.zone);
             end
-            system(cmd);
+            
+            fprintf('Initiated cluster deletion.  This can take 3-5 minutes.\n');
+            [status, result] = system(cmd);
+            if status
+                error('Cluster delete failure\n %s\n',result);
+            end
         end
         
         function [result, status, cmd] = ls(obj,varargin)
@@ -430,7 +439,7 @@ classdef gCloud < handle
             % Might want to turn off printout
             cmd = sprintf('kubectl delete jobs --all --namespace=%s',obj.namespace);
             
-            fprintf('Deleting all jobs in name space %s',obj.namespace)
+            fprintf('Deleting all jobs in name space %s\n',obj.namespace)
             [status, result] = system(cmd);
             if status, warning('Jobs not correctly deleted\n'); end
             fprintf('%s\n',result);
