@@ -150,8 +150,12 @@ else
     
     % Remember where you are, and then change to the scene folder
     
-    % Zip recursively but excluding certain file types and any other
-    % zip files that might have been put here.
+    % Zip recursively so that renderings/ is there
+    % but exclude
+    %   jpg files - 
+    %   zip files - I do not think so ... check
+    % that might be there.  If the zipFileName is already there, this
+    % command updates it.
     fprintf('Zipping into %s\n',zipFileName);
     cmd = sprintf('zip -r %s %s  *.pbrt renderings/* *.zip -x *.jpg',zipFileName,allFiles);
     status = system(cmd);
