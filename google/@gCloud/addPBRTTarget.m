@@ -44,9 +44,13 @@ replace = round(p.Results.replace);
 % put all the versions into the same remote directory.  So we set up
 % the cloud folder on the input.
 pbrtScene = thisR.get('input file');
-if ~exist(pbrtScene,'file'), error('PBRT scene not found %s\n',pbrtScene);
-else,                       [~, sceneName] = fileparts(pbrtScene);
-end
+% -----Zhenyi 
+% if ~exist(pbrtScene,'file'), error('PBRT scene not found %s\n',pbrtScene);
+% else,                       [~, sceneName] = fileparts(pbrtScene);
+% end
+
+[~, sceneName] = fileparts(pbrtScene);
+
 cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
 
 % The output pbrt scene file is based on the output file, and this can
@@ -59,7 +63,7 @@ target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
 
  % Indicate if this target is a depth map or not. This is used to sort between returned targets when downloading. 
 target.depthFlag = 0;
-
+target.meshFlag  = 0;
 % Add this target to the targets already stored.
 if isempty(replace),   obj.targets = cat(1,obj.targets,target);
 else
@@ -88,5 +92,23 @@ if(obj.renderDepth)
     end
     
 end
+%% Add mesh file if requested
+if(obj.renderMesh)
+    % We assume the mesh is always the next target, after the scene
+    % render.  This is dangerous.  Say the person has a set of targets and
+    % then changes whether they are computing the depth.  We might be
+    % over-writing the next target.  Be fearful when you get here.
+    target.camera = thisR.camera;
+    target.local = pbrtScene;
+    target.remote = fullfile(cloudFolder,sprintf('%s_mesh.pbrt',sceneName));
+    target.meshFlag = 1;
 
+    % Add this target to the targets already stored.
+    if isempty(replace)
+        obj.targets = cat(1,obj.targets,target);
+    else
+        obj.targets(replace+1) = target;
+    end
+    
+end
 end

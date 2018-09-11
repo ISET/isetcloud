@@ -17,10 +17,11 @@ gcpconfig.projectid    = 'primal-surfer-140120';
 
 % These can be set, and here are the defaults
 gcpconfig.zone         = 'us-central1-a';    
-gcpconfig.instanceType = 'n1-highcpu-32';
+% gcpconfig.instanceType = 'n1-highcpu-32';
+gcpconfig.instanceType = 'n1-standard-32';
 
-jsonName = fullfile(mcRootPath,'accounts','gcp-pbrtv3-central-32.json');
-jsonwrite(jsonName,gcpconfig);
+jsonName = fullfile(mcRootPath,'accounts','gcp-pbrtv3-central-standard-32cpu-120m.json');
+jsonencode(jsonName,gcpconfig);
 
 %{
 thisAccount = jsonread(jsonName);

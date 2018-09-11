@@ -49,7 +49,7 @@ classdef gCloud < handle
         zone         = 'us-central1-a';
         instanceType = 'n1-highcpu-32';
         minInstances = 1;     %
-        maxInstances = 10;    %
+        maxInstances = 100;    %
         preemptible  = true;  %
         autoscaling  = true;  %
         namespace    = '';    %
@@ -59,6 +59,8 @@ classdef gCloud < handle
         
         % Depth map flag
         renderDepth = false;
+        % Mesh flag
+        renderMesh  = false;
         
         % Descriptor
         % TL: An extra property for misc descriptors that we want
@@ -91,7 +93,7 @@ classdef gCloud < handle
             p.addParameter('zone','us-central1-a',@ischar);
             p.addParameter('instancetype','n1-highcpu-32',@ischar);
             p.addParameter('mininstances',1,@isnumeric);
-            p.addParameter('maxinstances',10,@isnumeric);
+            p.addParameter('maxinstances',20,@isnumeric);
             p.addParameter('preemptible',true,@islogical);
             p.addParameter('autoscaling',true,@islogical);
             p.addParameter('cloudbucket','',@ischar);
@@ -252,7 +254,7 @@ classdef gCloud < handle
                 'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
                 'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
                 'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth',...
-                'nodeConfig','locations','subnetwork'};
+                'nodeConfig','locations','subnetwork','networkConfig'};
             result_clusters = rmfield(result_clusters,fields);
             result_clusters = orderfields(result_clusters, ...
                 {'name', 'zone', 'status','createTime','currentNodeCount'});
@@ -290,7 +292,7 @@ classdef gCloud < handle
             if isempty(obj.targets)
                 fprintf('No targets\n');
             else
-                fprintf('\nCamera\t\t local\t\t remote\t\t depth\n')
+                fprintf('\nCamera\t\t local\t\t remote\t\t metadata\n')
                 fprintf('--------------------------------------------------------\n');
                 for ii =1:length(obj.targets)
                     cType = obj.targets(ii).camera.subtype;

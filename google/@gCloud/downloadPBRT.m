@@ -1,4 +1,4 @@
-function isetObj = downloadPBRT( obj, thisR, varargin )
+function [isetObj,meshImage] = downloadPBRT( obj, thisR, varargin )
 % Download data from gcloud bucket, returning *.dat files as ISET objects
 % 
 % Syntax:
@@ -65,6 +65,23 @@ for t=1:length(obj.targets)
          depthMap = piReadDAT(depthOutFile, 'maxPlanes', 31);
          depthMap = depthMap(:,:,1);
     end
+    % Look for the corresponding mesh file (if necessary)
+    if(obj.renderMesh)
+        cmd = sprintf('gsutil cp %s/renderings/%s_mesh.dat %s/renderings/%s_mesh.dat',...
+            remoteFolder,remoteFile,targetFolder,remoteFile);
+        
+        % Do it
+        [status, result] = system(cmd);
+        if status
+            disp(result)
+            warning('Could not download mesh image: %s/renderings/%s_mesh.dat',remoteFolder,remoteFile);
+        end
+        
+        % Read the downloaded depth file
+        meshOutFile = sprintf('%s/renderings/%s_mesh.dat',targetFolder,remoteFile);
+        meshData = piReadDAT(meshOutFile, 'maxPlanes', 31);
+        meshImage = meshData(:,:,1); % directly output a meshImage?
+    end
     
     % Convert the dat file to an ISET format
     outFile = sprintf('%s/renderings/%s.dat',targetFolder,remoteFile);
@@ -105,7 +122,8 @@ for t=1:length(obj.targets)
             
         case 'pinhole'
             % In this case, we the radiance describes the scene, not an oi
-            ieObject = piSceneCreate(photons,'meanLuminance',100);
+%             ieObject = piSceneCreate(photons,'meanLuminance',100);
+            ieObject = piSceneCreate(photons,'meanLuminance',1000);
             ieObject = sceneSet(ieObject,'name',ieObjName);
             if exist('depthMap','var')
             if(~isempty(depthMap))
