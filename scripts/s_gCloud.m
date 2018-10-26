@@ -108,7 +108,7 @@ gcp.ls
 
 %% Remove an existing cluster
 
-gcp.clusterRm(clusterName);
+gcp.clusterDelete(clusterName);
 gcp.Configlist;
 
 %% Push one docker image from docker hub

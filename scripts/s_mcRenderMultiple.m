@@ -33,68 +33,29 @@ if ~mcDockerExists, mcDockerConfig; end % check whether we can use docker
 if ~mcGcloudExists, mcGcloudConfig; end % check whether we can use google cloud sdk;
 
 %% Initialize your cluster
-tic
 gcp = gCloud('configuration','gcp-pbrtv3-central-32');
-toc
-
-% Show where
-gcp.targets =[];
 
 % Show where we stand
 str = gcp.configList;
-
-%{
-tic
-dockerAccount= 'vistalab';
-
-% This is the docker image we use to render.  The gCloud code checks
-% whether we have it, and if not it pulls from dockerhub to get it.
-dockerImage = 'gcr.io/primal-surfer-140120/pbrt-v3-spectral-gcloud';
-
-% This is where data are stored.
-cloudBucket = 'gs://primal-surfer-140120.appspot.com';
-
-% A convenient name for reference
-clusterName = 'pbrtcloud';
-
-% The Wandell lab has two projects.  For rendering we use this one.
-projectid    = 'primal-surfer-140120';
-
-% These can be set, and here are the defaults
-% zone         = 'us-central1-a';    
-% instanceType = 'n1-highcpu-32';
-
-gcp = gCloud('dockerAccount',dockerAccount,...
-    'projectid',projectid,...
-    'dockerImage',dockerImage,...
-    'clusterName',clusterName,...
-    'cloudBucket',cloudBucket);
-toc
-%}
 
 %% Multiple scene definitions
 
 % The isetcloud code will upload an run a number of 'target' scenes, each
 % defined by their own parameters. The list if targets is stored in the
 % variable 'targets'.  We start out by emptying the list.
-
 gcp.targets =[];
 
-%% This is the StopSign example in iset3d
+%% Set up the StopSign example
 
-% The first target is the stop sign.
 fname = fullfile(piRootPath,'data','V3','StopSign','stop.pbrt');
-if ~exist(fname,'file'), error('File not found'); end
-
 thisR = piRead(fname,'version',3);  % Some warnings here.
-from = thisR.get('from');
 
 % Default is a relatively low resolution (256).
 thisR.set('camera','pinhole');
 thisR.set('film resolution',256);
 thisR.set('rays per pixel',128);
 
-% Set up data for upload
+% Set up data for piWrite
 outputDir = fullfile(mcRootPath,'local','stop');
 if ~exist(outputDir,'dir'), mkdir(outputDir); end
 
@@ -102,25 +63,24 @@ if ~exist(outputDir,'dir'), mkdir(outputDir); end
 thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,1,e));
 piWrite(thisR);
 
-% Set parameters for multiple scenes, same geometry and materials
-gcp.uploadPBRT(thisR);  
+% Upload based on the recipe
+gcp.uploadPBRT(thisR);
+
+% This is always the first job
 addPBRTTarget(gcp,thisR,'replace',1);
 fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 
 %% Change the lookAt for the stop sign
 
-% First dimension is right-left
-% Second dimension is towards the object.
+% First dimension is right-left; second dimension is towards the object.
 % The up direction is specified in lookAt.up
+from = thisR.get('from');
 for jj=1:5
-    thisR.set('from',from + [0 0 jj]);
-    thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));
     
+    % We move only a small amount so it looks a little like a video
+    thisR.set('from',from + [jj/75 jj/75 0]);
+    thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,jj+1,e));   
     piWrite(thisR);   % This lookAt case only modifies the scene file
-    
-    % This will create a new material file, to change the material, see
-    % t_piMaterialChange.m in iset3d
-    % piWrite(thisR, 'creatematerials',true)
     
     % Call this upload so all that we add is stop-2.pbrt, we do not upload the
     % geometry and materials and other stuff again.
@@ -130,7 +90,6 @@ for jj=1:5
 end
 
 %% Describe the targets
-
 gcp.targetsList;
 
 %% This invokes the PBRT-V3 docker image
@@ -138,14 +97,9 @@ gcp.render();
 
 cnt = 0;
 while cnt < length(gcp.targets)
-    cnt = podSucceeded(gcp);
     pause(5);
+    cnt = gcp.jobsStatus;
 end
-
-%{
-gcp.PodDescribe(podname{1})
-gcp.Podlog(podname{1});
-%}
 
 %% Keep checking for the data, every 15 sec, and download it is there
 
@@ -160,7 +114,7 @@ sceneWindow;
 sceneSet(scene,'gamma',0.5);
 
 %% Remove all jobs
-gcp.JobsRmAll();
+gcp.jobsDelete();
 
 %% END
 

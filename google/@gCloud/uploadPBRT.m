@@ -167,8 +167,15 @@ else
     
     % Remember where you are, and then change to the scene folder
     
-    % Zip recursively but excluding certain file types and any other
-    % zip files that might have been put here.
+    % Zip recursively so that renderings/ is there
+    % but exclude
+    %   contents of the renderings folder
+    %   zip files
+    %   jpg files - 
+    %   zip files 
+    %   pbrt files
+    % If output file (zipFileName) is already present, this command
+    % updates the file contents.
     fprintf('Zipping into %s\n',zipFileName);
     cmd = sprintf('zip -r %s %s -x *.jpg *.pbrt renderings/* *.zip *.json',zipFileName,allFiles);
     status = system(cmd);
@@ -240,7 +247,7 @@ if(numel(dir(pbrtMaterialFile))) > 0 && materials
         cloudFolder);
     [status, result] = system(cmd);
     if status
-        Warning('Material file cp to cloud folder failed\n %s',result);
+        warning('Material file cp to cloud folder failed\n %s',result);
     end
 end
 

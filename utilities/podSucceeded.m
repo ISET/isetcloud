@@ -1,13 +1,15 @@
-function [cnt,result,podnames] = podSucceeded(obj,varargin)
-% Count how many of the kubernetes (PODS) have finished
+function [nSucceeded,jobs] = podSucceeded(obj,varargin)
+% Count how many of the kubernetes jobs have succeeded
 %
 % Syntax
-%   [cnt, result, podnames] = podSucceeded(obj)
+%   [nSucceeded,jobs] = podSucceeded(obj)
 %
 % Description
-%    We set up processes to run in the cluster. This routine counts how
-%    many processes have Succeeded.  The routine is used in a loop to wait
-%    for completion of all the jobs
+%    This routine counts how many PODS have Succeeded.  The routine is
+%    used in a loop to wait for completion of all the jobs. In some
+%    cases, there are 0 PODS and thus 0 Succeeded.  I suppose this
+%    happens because the job is removed before we see the 'Succeeded'
+%    string.  In that case we should return something helpful, not 0.
 %
 % Inputs
 %   obj:  A gCloud object
@@ -31,6 +33,8 @@ function [cnt,result,podnames] = podSucceeded(obj,varargin)
 %
 % See also:  gCloud, gCloud.render, s_mcRenderMaterial
 
+error('Deprecated.  Use jobsList');
+
 %%
 p = inputParser;
 p.addRequired('obj',@(x)(isa(x,'gCloud')));
@@ -38,21 +42,40 @@ p.addParameter('print',true,@islogical);
 p.parse(obj,varargin{:});
 
 %%
-cnt = 0;
-[podnames,result] = obj.Podslist('print',false);
-nPODS = length(result.items);
-for ii=1:nPODS
-    if p.Results.print
-        fprintf('%s\n',result.items(ii).status.phase);
-    end
-    if isequal(result.items(ii).status.phase,'Succeeded')
-        cnt = cnt + 1;
+jobs = obj.jobsList('name space',obj.namespace');
+nJOBS = length(jobs);
+
+nSucceeded = 0;
+for ii=1:nJOBS
+    if jobs.items(ii).status.succeeded == 1
+        nSucceeded = nSucceeded + 1;
     end
 end
 
 if p.Results.print
-    fprintf('Found %d PODS. N Succeeded = %d\n',nPODS,cnt); 
+    fprintf('Found %d jobs. N Succeeded = %d\n',nJOBS,nSucceeded);
     fprintf('------------\n');
 end
 
 end
+
+% %%
+% cnt = 0;
+% [podnames,result] = obj.Podslist('print',false);
+% nPODS = length(result.items);
+% if nPODS == 0
+%     % This is the case in which we lost our PODS.  We should do
+%     % something better.  But this solves one case.  A deeper solution
+%     % is needed. (BW).
+%     cnt = cnt + 1;
+% else
+%     for ii=1:nPODS
+%         if p.Results.print
+%             fprintf('%s\n',result.items(ii).status.phase);
+%         end
+%         if isequal(result.items(ii).status.phase,'Succeeded')
+%             cnt = cnt + 1;
+%         end
+%     end
+% end
+

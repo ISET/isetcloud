@@ -26,13 +26,15 @@ function obj = init(obj, varargin )
 
 %% Check that we are in the right project
 
-% Our lab already has two projects. 
-%  machine-driving-20180115, and
-%  primal-surfer-140120
+% Our lab has two projects
 %
-% We should make sure we are in the right project before we run. This is
-% both for billing and because the API might be set up differently between
+% * machine-driving-20180115, and
+% * primal-surfer-140120
+%
+% We make sure we are in the right project before we run. This is both
+% for billing and because the API might be set up differently between
 % projects.
+
 cmd = sprintf('gcloud config get-value project');
 [~, result] = system(cmd);
 result = result(1:end-1);
@@ -42,7 +44,7 @@ if ~strcmp(result, obj.projectid)
     cmd = sprintf('gcloud config get-value project');
     [~, result] = system(cmd);
 end
-fprintf('Project is set to %s\n',result(1:end-1));
+fprintf('Project is set to %s\n',result);
 
 %% List and possibly create the cluster
 
@@ -64,12 +66,21 @@ if isempty(result)
             cmd, obj.minInstances, obj.maxInstances);
     end
     
-    tic; fprintf('Creating a k8s cluster named %s ...',obj.clusterName)
-    [~, result] = system(cmd);
-    fprintf('done\n'); toc;
+    % Initiate creation
+    tic; 
+    fprintf('Creating a k8s cluster named %s ...',obj.clusterName)
+    [status, result] = system(cmd);
     
-    % Returned result
-    fprintf('%s\n',result);
+    % Report back
+    if status
+        error('Problem creating cluster\n%s\n',result);
+    else
+        fprintf('Cluster %s created\n',obj.clusterName); 
+    end
+    
+    % Report time.
+    toc;
+    
 end
 
 %% Get user credentials.
