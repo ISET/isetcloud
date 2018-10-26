@@ -95,7 +95,7 @@ fprintf('Added one target.  Now %d current targets\n',length(gcp.targets));
 %% This invokes the PBRT-V3 docker image
 
 gcp.render();
-
+%%
 cnt = 0;
 while cnt < length(gcp.targets)
     [cnt, result] = podSucceeded(gcp);
@@ -111,13 +111,18 @@ gcp.Podlog(podname{1});
 
 %% Download and show
 
-scene   = gcp.downloadPBRT(thisR);
+[scene,scene_mesh]   = gcp.downloadPBRT(thisR);
 disp('Data downloaded');
 
-% Show the first scene (there is only one in this case) in ISET
-ieAddObject(scene{1}); sceneWindow;
-sceneSet(scene,'gamma',0.5);
+% Show it in ISET
+for ii = 1:length(scene)
+    ieAddObject(scene{ii});
+end
+% oiWindow;oiSet(scene,'gamma',0.7);
+sceneWindow;
+sceneSet(scene,'gamma',0.7);
 
+vcNewGraphWin;imagesc(scene_mesh);colormap(jet);title('Mesh')
 %% Remove all jobs - I am not really sure what this does.
 
 % When we run a target job, it will create a kubernetes POD that may

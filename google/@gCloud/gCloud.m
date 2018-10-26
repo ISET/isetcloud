@@ -53,7 +53,7 @@ classdef gCloud < handle
         preemptible  = true;  %
         autoscaling  = true;  %
         namespace    = '';    %
-        
+        fwAPI;
         dockerImage  = '';
         dockerAccount= '';
         
