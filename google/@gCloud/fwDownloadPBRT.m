@@ -1,4 +1,4 @@
-function [isetObj,meshImage] = downloadPBRT( obj,varargin )
+function [isetObj,meshImage,label] = fwDownloadPBRT(obj,varargin )
 % Download data from gcloud bucket, returning *.dat files as ISET objects
 % 
 % Syntax:
@@ -18,90 +18,75 @@ function [isetObj,meshImage] = downloadPBRT( obj,varargin )
 % See also: piRender
 
 %%
-
+p = inputParser;
+varargin = ieParamFormat(varargin);
+p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
+p.parse(varargin{:});
+st = p.Results.scitran;
+if isempty(st), st = scitran('stanfordlabs');end
+%%
 isetObj = cell(1,length(obj.targets));
 
 % We return a file for each of the gcloud targets
 for t=1:length(obj.targets)
     
-    if(obj.targets(t).depthFlag)
-        % We skip the depth map for now. Later when we encounter a radiance
-        % target we will look for the corresponding depth map and load it
-        % then. See below.
-        continue;
-    end
-        
-    % This is where the data started
-%     [targetFolder]  = fileparts(thisR.get('outputfile'));
-    [targetFolder]= fileparts(obj.targets(t).local);
+    [targetFolder,sceneName]= fileparts(obj.targets(t).local);
     % The targets slot contains the fullpath to the output on the
     % cloud
-    [remoteFolder, remoteFile] = fileparts(obj.targets(t).remote);
+    sessionName = strsplit(sceneName,'_');
+    sessionName = sessionName{1};
     
-    % Command to download from cloud to local directory
-    cmd = sprintf('gsutil cp %s/renderings/%s.dat %s/renderings/%s.dat',...
-        remoteFolder,remoteFile,targetFolder,remoteFile);
+    % Download files in the acquisition
+    files = st.search('file',...
+   'project label exact','Renderings',...
+   'session label exact',sessionName,...
+   'acquisition label exact',sceneName);
+    dataId = files{1}.parent.id;
     
-    % Do it
-    [status, result] = system(cmd);
-    if status
-        disp(result)
-    end
-    
-    % Look for the corresponding depth file (if necessary)
+    destDir = fullfile(targetFolder,'renderings');
+    if ~exist(destDir, 'dir'), mkdir(destDir);end
+    % Download irradiance image
+    destName_irradiance = fullfile(destDir,[sceneName,'.dat']);
+    st.fileDownload([sceneName,'.dat'],...
+        'container type', 'acquisition' , ...
+        'container id',  dataId ,...
+        'destination',destName_irradiance);
+    fprintf('%s downloaded \n',[sceneName,'.dat']);
     if(obj.renderDepth)
-        cmd = sprintf('gsutil cp %s/renderings/%s_depth.dat %s/renderings/%s_depth.dat',...
-            remoteFolder,remoteFile,targetFolder,remoteFile);
-        
-        % Do it
-        [status, result] = system(cmd);
-        if status
-            disp(result)
-            warning('Could not download depth map: %s/renderings/%s_depth.dat',remoteFolder,remoteFile);
-        end
-        
-        % Read the downloaded depth file
-         depthOutFile = sprintf('%s/renderings/%s_depth.dat',targetFolder,remoteFile);
-         depthMap = piReadDAT(depthOutFile, 'maxPlanes', 31);
-         depthMap = depthMap(:,:,1);
+    destName_depth = fullfile(destDir,[sceneName,'_depth.dat']);
+    st.fileDownload([sceneName,'_depth.dat'],...
+        'container type', 'acquisition' , ...
+        'container id',  dataId ,...
+        'destination',destName_depth);
+    fprintf('%s downloaded \n',[sceneName,'_depth.dat']);
+    depthMap = piReadDAT(destName_depth, 'maxPlanes', 31);
+    depthMap = depthMap(:,:,1);
     end
-    % Look for the corresponding mesh file (if necessary)
     if(obj.renderMesh)
-        cmd = sprintf('gsutil cp %s/renderings/%s_mesh.dat %s/renderings/%s_mesh.dat',...
-            remoteFolder,remoteFile,targetFolder,remoteFile);
-        
-        % Do it
-        [status, result] = system(cmd);
-        if status
-            disp(result)
-            warning('Could not download mesh image: %s/renderings/%s_mesh.dat',remoteFolder,remoteFile);
-        end
-        
-        cmd = sprintf('gsutil cp %s/renderings/%s_mesh_mesh.txt %s/renderings/%s_mesh.txt',...
-            remoteFolder,remoteFile,targetFolder,remoteFile);
-        
-        % Do it
-        [status, result] = system(cmd);
-        if status
-            disp(result)
-            warning('Could not download mesh image: %s/renderings/%s_mesh_mesh.txt',remoteFolder,remoteFile);
-        end
-        
-        % Read the downloaded depth file
-        meshOutFile = sprintf('%s/renderings/%s_mesh.dat',targetFolder,remoteFile);
-        meshData = piReadDAT(meshOutFile, 'maxPlanes', 31);
-        meshImage{t} = meshData(:,:,1); % directly output a meshImage?
+        destName_mesh = fullfile(destDir,[sceneName,'_mesh.dat']);
+        st.fileDownload([sceneName,'_mesh.dat'],...
+            'container type', 'acquisition' , ...
+            'container id',  dataId ,...
+            'destination',destName_mesh);
+       fprintf('%s downloaded \n',[sceneName,'_mesh.dat']); 
+        meshData = piReadDAT(destName_mesh, 'maxPlanes', 31);
+        meshImage{t} = meshData(:,:,1);
+        % get label file 
+        destName_label = fullfile(destDir,[sceneName,'_mesh.txt']);
+        label{t} = destName_label;
+        st.fileDownload([sceneName,'_mesh_mesh.txt'],...
+            'container type', 'acquisition' , ...
+            'container id',  dataId ,...
+            'destination',destName_label);
+        fprintf('%s downloaded \n',[sceneName,'_mesh.txt']); 
     end
-    
-    % Convert the dat file to an ISET format
-    outFile = sprintf('%s/renderings/%s.dat',targetFolder,remoteFile);
     
     % This code should be a separate function, and be shared with
     % piRender.
-    if exist(outFile,'file')
-    photons = piReadDAT(outFile, 'maxPlanes', 31);
+    if exist(destName_irradiance,'file')
+    photons = piReadDAT(destName_irradiance, 'maxPlanes', 31);
     
-    ieObjName = sprintf('%s-%s',remoteFile,datestr(now,'mmm-dd,HH:MM'));
+    ieObjName = sprintf('%s-%s',sceneName,datestr(now,'mmm-dd,HH:MM'));
     if strcmp(obj.targets(t).camera.subtype,'perspective')
         opticsType = 'pinhole';
     else
@@ -164,4 +149,3 @@ if (obj.renderMesh)
 end
 
 end
-
