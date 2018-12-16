@@ -263,7 +263,7 @@ classdef gCloud < handle
                 'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
                 'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
                 'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth',...
-                'nodeConfig','locations','subnetwork','networkConfig'};
+                'nodeConfig','locations','subnetwork','networkConfig','location'};
             result_clusters = rmfield(result_clusters,fields);
             result_clusters = orderfields(result_clusters, ...
                 {'name', 'zone', 'status','createTime','currentNodeCount'});
@@ -508,9 +508,9 @@ classdef gCloud < handle
         
         function [result, status,cmd] = Podlog(obj,podname)
                 cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
-                [status, result] = system(cmd);
-                if status, warning('Log not returned correctly\n'); end
-                fprintf('%s\n',result);
+%                 [status, result] = system(cmd);
+%                 if status, warning('Log not returned correctly\n'); end
+                fprintf('%s\n',cmd);
         end
         
 
