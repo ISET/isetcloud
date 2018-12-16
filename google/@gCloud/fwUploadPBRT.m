@@ -128,7 +128,7 @@ end
 
 %%  Copy the local data to flywheel 'scenes_pbrt' session, create an acquisition named by scene name;
 pbrtSceneFile = thisR.get('output file');
-[p,sceneName,~]= fileparts(pbrtSceneFile);
+[sceneFolder,sceneName,~]= fileparts(pbrtSceneFile);
 
 if ~exist(pbrtSceneFile,'file')
     error('Could not find pbrt scene file %s\n',pbrtSceneFile);
@@ -166,8 +166,8 @@ end
 
 %% Copy geometry and material files
  
-pbrtMaterialFile = fullfile(p,sprintf('%s_materials.pbrt',sceneName));
-pbrtGeometryFile = fullfile(p,sprintf('%s_geometry.pbrt',sceneName));
+pbrtMaterialFile = fullfile(sceneFolder,sprintf('%s_materials.pbrt',sceneName));
+pbrtGeometryFile = fullfile(sceneFolder,sprintf('%s_geometry.pbrt',sceneName));
 
 status= st.fileUpload(pbrtMaterialFile,current_id.acquisition,'acquisition');
 if  isempty(status)
@@ -185,7 +185,7 @@ end
 %% Copy depth file
 if(obj.renderDepth)
     f_depth  = sprintf('%s_depth.pbrt',sceneName);
-    pbrtDepthFile = fullfile(p,f_depth);
+    pbrtDepthFile = fullfile(sceneFolder,f_depth);
     status= st.fileUpload(pbrtDepthFile,current_id.acquisition,'acquisition');
     if isempty(status)
         fprintf('%s uploaded \n',f_depth);
@@ -198,7 +198,7 @@ end
 if(obj.renderDepth)
     
     f_mesh  = sprintf('%s_mesh.pbrt',sceneName);
-    pbrtMeshFile = fullfile(p,f_mesh);
+    pbrtMeshFile = fullfile(sceneFolder,f_mesh);
     status= st.fileUpload(pbrtMeshFile,current_id.acquisition,'acquisition');
     if  isempty(status)
         fprintf('%s uploaded \n',f_mesh);
@@ -208,13 +208,30 @@ if(obj.renderDepth)
 end
 %% piGeometryRead creates a json file of current recipe, upload recipe.
 recepeJson = sprintf('%s.json',sceneName);
-pbrtRecipeJson = fullfile(p,recepeJson);
+pbrtRecipeJson = fullfile(sceneFolder,recepeJson);
 status= st.fileUpload(pbrtRecipeJson,current_id.acquisition,'acquisition');
 if  isempty(status)
     fprintf('%s uploaded \n',recepeJson);
 else
     error('cp recipeJson of scene file to flywheel failed\n');
 end
+%% save and upload gcp.target json file
+target.camera    = thisR.camera;
+target.local     = thisR.outputFile;
+target.remote    = obj.fwAPI.projectID;
+target.fwAPI     = obj.fwAPI;
+target.depthFlag = obj.renderDepth;
+target.meshFlag  = obj.renderMesh;
+targetJsonName = sprintf('%s_target.json',sceneName);
+targetJson=fullfile(sceneFolder,targetJsonName);
+jsonwrite(targetJson,target);
+status= st.fileUpload(targetJson,current_id.acquisition,'acquisition');
+if  isempty(status)
+    fprintf('%s uploaded \n',targetJsonName);
+else
+    error('cp targetJson of scene file to flywheel failed\n');
+end
+
 
 disp('All files uploaded to Flywheel!')
 end

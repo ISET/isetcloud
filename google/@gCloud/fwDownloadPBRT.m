@@ -37,11 +37,17 @@ for t=1:length(obj.targets)
     sessionName = sessionName{1};
     
     % Download files in the acquisition
+    %{
     files = st.search('file',...
    'project label exact','Renderings',...
    'session label exact',sessionName,...
    'acquisition label exact',sceneName);
     dataId = files{1}.parent.id;
+    %}
+    scene_acq =sprintf('wandell/Renderings/%s/%s',sessionName,sceneName);
+    acquisition = st.fw.lookup(scene_acq);
+    dataId      = acquisition.id;
+    
     
     destDir = fullfile(targetFolder,'renderings');
     if ~exist(destDir, 'dir'), mkdir(destDir);end
@@ -84,7 +90,11 @@ for t=1:length(obj.targets)
     % This code should be a separate function, and be shared with
     % piRender.
     if exist(destName_irradiance,'file')
-    photons = piReadDAT(destName_irradiance, 'maxPlanes', 31);
+        
+    energy = piReadDAT(destName_irradiance, 'maxPlanes', 31);
+    % default output is in units of energy
+    wave = 400:10:700;
+    photons = Energy2Quanta(wave, energy);
     
     ieObjName = sprintf('%s-%s',sceneName,datestr(now,'mmm-dd,HH:MM'));
     if strcmp(obj.targets(t).camera.subtype,'perspective')
@@ -119,7 +129,7 @@ for t=1:length(obj.targets)
         case 'pinhole'
             % In this case, we the radiance describes the scene, not an oi
 %             ieObject = piSceneCreate(photons,'meanLuminance',100);
-            ieObject = piSceneCreate(photons,'meanLuminance',1000);
+            ieObject = piSceneCreate(photons,'meanLuminance',100);
             ieObject = sceneSet(ieObject,'name',ieObjName);
             if exist('depthMap','var')
             if(~isempty(depthMap))
