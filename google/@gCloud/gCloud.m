@@ -68,7 +68,7 @@ classdef gCloud < handle
         % sceneEye object to the gCloud object so that each target will have
         % a corresponding sceneEye object. 
         miscDescriptor = [];
-        
+        bypass   = false;
         targets;    
         
     end
@@ -85,12 +85,12 @@ classdef gCloud < handle
             varargin = ieParamFormat(varargin);
             
             % File is x.json
-            p.addParameter('configuration','',@(x)(exist([x,'.json'],'file')==2));
+            p.addParameter('configuration','cloudRendering-pbrtv3-west1b-standard-32cpu-120m-flywheel',@(x)(exist([x,'.json'],'file')==2));
             
             p.addParameter('provider','Google',@ischar);
             p.addParameter('projectid','primal-surfer-140120',@ischar);
             p.addParameter('clustername','pbrtcloud',@ischar);
-            p.addParameter('zone','us-central1-a',@ischar);
+            p.addParameter('zone','us-west1-b',@ischar);
             p.addParameter('instancetype','n1-highcpu-32',@ischar);
             p.addParameter('mininstances',1,@isnumeric);
             p.addParameter('maxinstances',20,@isnumeric);
@@ -100,6 +100,7 @@ classdef gCloud < handle
             p.addParameter('dockerimage','',@ischar);
             p.addParameter('dockeraccount','',@ischar);
             p.addParameter('renderdepth',false,@islogical);
+            p.addParameter('bypass',false,@islogical);
             
             p.parse(varargin{:});
             
@@ -116,6 +117,7 @@ classdef gCloud < handle
             obj.dockerImage  = p.Results.dockerimage;
             obj.dockerAccount= p.Results.dockeraccount;
             obj.renderDepth  = p.Results.renderdepth;
+            obj.bypass       = p.Results.bypass;
             
             [status, obj.namespace] = system('echo -n $USER');
             if status, error('Problem setting name space'); end
@@ -135,8 +137,9 @@ classdef gCloud < handle
             end
             
             % Go for it
-            obj.init();
-
+            if ~obj.bypass
+                obj.init();
+            end
         end
         
         function [result, status, cmd]=clusterRm(obj)
