@@ -95,7 +95,7 @@ for t=1:length(obj.targets)
     % default output is in units of energy
     wave = 400:10:700;
     photons = Energy2Quanta(wave, energy);
-    
+    photons = energy;
     ieObjName = sprintf('%s-%s',sceneName,datestr(now,'mmm-dd,HH:MM'));
     if strcmp(obj.targets(t).camera.subtype,'perspective')
         opticsType = 'pinhole';
