@@ -30,7 +30,7 @@ isetObj = cell(1,length(obj.targets));
 % We return a file for each of the gcloud targets
 for t=1:length(obj.targets)
     
-    [targetFolder,sceneName]= fileparts(obj.targets(t).local);
+    [~,sceneName]= fileparts(obj.targets(t).local);
     % The targets slot contains the fullpath to the output on the
     % cloud
     sessionName = strsplit(sceneName,'_');
@@ -49,7 +49,7 @@ for t=1:length(obj.targets)
     dataId      = acquisition.id;
     
     
-    destDir = fullfile(targetFolder,'renderings');
+    destDir = fullfile(piRootPath,'local',[sessionName,'_',date],'renderings');
     if ~exist(destDir, 'dir'), mkdir(destDir);end
     % Download irradiance image
     destName_irradiance = fullfile(destDir,[sceneName,'.dat']);
@@ -95,7 +95,7 @@ for t=1:length(obj.targets)
     % default output is in units of energy
     wave = 400:10:700;
     photons = Energy2Quanta(wave, energy);
-    
+    photons = energy;
     ieObjName = sprintf('%s-%s',sceneName,datestr(now,'mmm-dd,HH:MM'));
     if strcmp(obj.targets(t).camera.subtype,'perspective')
         opticsType = 'pinhole';
