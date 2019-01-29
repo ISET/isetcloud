@@ -1,3 +1,9 @@
+### Dataset Preparation
+If you are using a mac, you should be careful when you convert your images/labels into tfRecord files, because mac automatically create a hidden file named '.DS_Store', which you should delete before run the python convert function.
+Under your source directory, run this: 
+
+`find . -name .DS_Store -type f -delete`
+
 ### Tip1:
 
 For tensorflow v1.8, you need pycocotools to utilize coco metrics on your evaluation process.
