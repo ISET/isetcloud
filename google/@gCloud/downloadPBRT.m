@@ -6,8 +6,10 @@ function isetObj = downloadPBRT( obj, thisR, varargin )
 %  
 % Input (required)
 %   thisR:  A render recipe.
-%
+%    
 % Inputs (optional)
+%   scaleIlluminance -  if true, we scale the mean illuminance by the pupil
+%                       diameter in piDat2ISET 
 %
 % Return
 %  isetObj - a cell array of ISET scene or oi (depending on the recipe
@@ -15,7 +17,19 @@ function isetObj = downloadPBRT( obj, thisR, varargin )
 %
 % TL/ZL, Vistalab 2017
 %
-% See also: piRender
+% See also: piDat2ISET
+
+%%
+p = inputParser;
+
+varargin = ieParamFormat(varargin);
+
+p.addRequired('thisR',@(x)(isequal(class(x),'recipe') || ischar(x)));
+
+p.addParameter('scaleIlluminance',true,@islogical);
+
+p.parse(thisR,varargin{:});
+scaleIlluminance = p.Results.scaleIlluminance;
 
 %%
 
@@ -53,7 +67,9 @@ for t=1:length(obj.targets)
     
     % Convert radiance to optical image
     ieObject = piDat2ISET(outFile,...
-        'label','radiance','recipe',thisR);
+        'label','radiance',...
+        'recipe',thisR,...
+        'scaleIlluminance',scaleIlluminance);
     
     % Look for the corresponding depth file (if necessary)
     if(obj.renderDepth)
