@@ -100,3 +100,11 @@ You are able to configure the number of gpus you like to use, add disk storage t
 Once you logged in, run`jupyter-notebook --no-browser --port=7000`, you will get a url like
 `http://localhost:7000/?token=xxxxxxxxxxxxxxxxx`, just replace "localhost" with "35.277.146.166", then visit the url on your local browser. 
 Now you can run your machine learning tasks with jupyter notebook.
+
+#### 02/08/2019 tensorflow doesnot work on distributed GPUs, so I am switching to pytorch
+Facebook has a github branch named [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark) providing faster rcnn and maskrcnn pretrained models and training & evaluation tools.
+## Note
+I am using cuda9.2 cudnn7.2 pytorch-nightly with cuda92: conda install pytorch-nightly cuda92 -c pytorch
+
+
+
