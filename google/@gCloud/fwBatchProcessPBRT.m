@@ -14,7 +14,7 @@ function fwBatchProcessPBRT(obj,varargin )
 %  isetObj - a cell array of ISET scene or oi (depending on the recipe
 %            optics)
 %
-% ZL, Vistalab 2017
+% ZL, Vistalab 2019
 %
 % See also: piRender
 
@@ -154,8 +154,6 @@ for tt = 1:length(obj.targets)
     % piRender.
     isetObj = piDat2ISET(destName_irradiance,...
         'label','radiance','recipe',thisR); 
-    
-
     %% Annotation
     ieObject = piFireFliesRemove(isetObj);
     pngFigure = oiGet(ieObject,'rgb image');
