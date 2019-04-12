@@ -36,6 +36,7 @@ for tt = 1:length(obj.targets)
     % cloud
     sessionName = strsplit(sceneName,'_');
     sessionName = sessionName{1};
+    
     project = st.lookup('wandell/Renderings');
     session = project.sessions.findOne(sprintf('label=%s',sessionName));
     try
