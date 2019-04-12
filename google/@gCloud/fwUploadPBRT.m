@@ -99,7 +99,7 @@ if(obj.renderDepth)
         'overwriteresources',false,...
         'overwritematerials',false,...
         'creatematerials',false,...
-        'overwritegeometry',false);
+        'overwritegeometry',true);
 end
 
 %% Write out the mesh file, if required
@@ -135,15 +135,8 @@ if ~exist(pbrtSceneFile,'file')
 end
 
 %
-hierarchy = st.projectHierarchy('Graphics assets');
-sessions = hierarchy.sessions;
-
-for ii=1:length(sessions)
-    if isequal(lower(sessions{ii}.label),'scenes_pbrt')
-        sceneSession = sessions{ii};
-        break;
-    end
-end
+project = st.lookup('wandell/Graphics assets');
+sceneSession = project.sessions.findOne('label=scenes_pbrt');
 % create an acquisition
 current_id = st.containerCreate('Wandell Lab', 'Graphics assets',...
     'session','scenes_pbrt','acquisition',sceneName);
