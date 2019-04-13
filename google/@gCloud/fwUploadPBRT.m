@@ -98,8 +98,8 @@ if(obj.renderDepth)
         'overwritelensfile',false,...
         'overwriteresources',false,...
         'overwritematerials',false,...
-        'creatematerials',false,...
-        'overwritegeometry',false);
+        'creatematerials',true,...
+        'overwritegeometry',true);
 end
 
 %% Write out the mesh file, if required
@@ -113,8 +113,8 @@ if(obj.renderMesh)
         'overwritelensfile',false,...
         'overwriteresources',false,...
         'overwritematerials',false,...
-        'creatematerials',false,...
-        'overwritegeometry',false);
+        'creatematerials',true,...
+        'overwritegeometry',true);
 end
 
 %% These are the PBRT scene file and resources
@@ -135,15 +135,8 @@ if ~exist(pbrtSceneFile,'file')
 end
 
 %
-hierarchy = st.projectHierarchy('Graphics assets');
-sessions = hierarchy.sessions;
-
-for ii=1:length(sessions)
-    if isequal(lower(sessions{ii}.label),'scenes_pbrt')
-        sceneSession = sessions{ii};
-        break;
-    end
-end
+project = st.lookup('wandell/Graphics assets');
+sceneSession = project.sessions.findOne('label=scenes_pbrt');
 % create an acquisition
 current_id = st.containerCreate('Wandell Lab', 'Graphics assets',...
     'session','scenes_pbrt','acquisition',sceneName);
@@ -186,8 +179,10 @@ end
 if(obj.renderDepth)
     f_depth  = sprintf('%s_depth.pbrt',sceneName);
     pbrtDepthFile = fullfile(sceneFolder,f_depth);
+    pbrtDepthGeometryFile = fullfile(sceneFolder,sprintf('%s_depth_geometry.pbrt',sceneName));
     status= st.fileUpload(pbrtDepthFile,current_id.acquisition,'acquisition');
-    if isempty(status)
+    status_geometry= st.fileUpload(pbrtDepthGeometryFile,current_id.acquisition,'acquisition');
+    if isempty(status) || isempty(status_geometry)
         fprintf('%s uploaded \n',f_depth);
     else
         error('cp Depth scene file to flywheel failed\n');
@@ -199,8 +194,10 @@ if(obj.renderDepth)
     
     f_mesh  = sprintf('%s_mesh.pbrt',sceneName);
     pbrtMeshFile = fullfile(sceneFolder,f_mesh);
+    pbrtMeshGeometryFile = fullfile(sceneFolder,sprintf('%s_mesh_geometry.pbrt',sceneName));
     status= st.fileUpload(pbrtMeshFile,current_id.acquisition,'acquisition');
-    if  isempty(status)
+    status_geometry= st.fileUpload(pbrtMeshGeometryFile,current_id.acquisition,'acquisition');
+    if  isempty(status) || isempty(status_geometry)
         fprintf('%s uploaded \n',f_mesh);
     else
         error('cp Mesh scene file to flywheel failed\n');
@@ -233,6 +230,6 @@ else
 end
 
 
-disp('All files uploaded to Flywheel!')
+disp('*** All files uploaded to Flywheel. ***')
 end
 

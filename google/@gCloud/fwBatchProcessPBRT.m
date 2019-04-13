@@ -1,4 +1,4 @@
-function fwBatchProcessPBRT(obj,varargin )
+function ieObject = fwBatchProcessPBRT(obj,varargin )
 % Download data from flywheel and annotate them.
 % Save optical image at desired folder.
 %
@@ -37,14 +37,14 @@ for tt = 1:length(obj.targets)
     sessionName = strsplit(sceneName,'_');
     sessionName = sessionName{1};
     
-    scene_acq =sprintf('wandell/Renderings/%s/%s',sessionName,sceneName);
+    project = st.lookup('wandell/Renderings');
+    session = project.sessions.findOne(sprintf('label=%s',sessionName));
     try
-    acquisition = st.fw.lookup(scene_acq);
+    acq = session.acquisitions.findOne(sprintf('label=%s',sceneName));
     catch
         fprintf('%s acquisition not found',scene_acq);
         continue
     end
-    dataId      = acquisition.id;
     % on holidayfun instance --zhenyi
     %     destDir = fullfile(piRootPath,'local',[sessionName,'_',date],'renderings');
     if ~exist(destDir, 'dir'), mkdir(destDir);end
@@ -52,10 +52,8 @@ for tt = 1:length(obj.targets)
     destName_irradiance = fullfile(destDir,[sceneName,'.dat']);
     if ~exist(destName_irradiance,'file')
         try
-            st.fileDownload([sceneName,'.dat'],...
-                'container type', 'acquisition' , ...
-                'container id',  dataId ,...
-                'destination',destName_irradiance);
+            thisFile  = acq.getFile([sceneName,'.dat']); 
+            thisFile.download(destName_irradiance);
             fprintf('%s downloaded. \n',[sceneName,'.dat']);
         catch
             fprintf('Target %d Not found in Flywheel',tt);
@@ -69,16 +67,14 @@ for tt = 1:length(obj.targets)
     % Download scene recipe
     destName_recipe = fullfile(destDir,[sceneName,'.json']);
 %     acqRecipe = st.fw.lookup(sprintf('wandell/Graphics assets/scenes_pbrt/%s',sceneName));
-    acqRecipe = st.fw.lookup(sprintf('wandell/Renderings/scene_pbrt/%s',sceneName));
-
-    acqdataId = acqRecipe.id;
+    GAssets = st.lookup('wandell/Graphics assets');
+    sessionRecipe = GAssets.sessions.findOne('label=scenes_pbrt');
+    acqRecipe= sessionRecipe.acquisitions.findOne(sprintf('label=%s',sceneName));
     % download the file
     if ~exist(destName_recipe,'file')
         try
-            st.fileDownload([sceneName,'.json'],...
-                'container type', 'acquisition' , ...
-                'container id',  acqdataId ,...
-                'destination',destName_recipe);
+            thisFile  = acqRecipe.getFile([sceneName,'.json']); 
+            thisFile.download(destName_recipe);
             fprintf('%s downloaded \n',[sceneName,'.json']);
         catch
             fprintf('%s not found \n',[sceneName,'.json']);
@@ -98,10 +94,8 @@ for tt = 1:length(obj.targets)
         destName_depth = fullfile(destDir,[sceneName,'_depth.dat']);
         if ~exist(destName_depth,'file')
             try
-                st.fileDownload([sceneName,'_depth.dat'],...
-                    'container type', 'acquisition' , ...
-                    'container id',  dataId ,...
-                    'destination',destName_depth);
+                thisFile  = acq.getFile([sceneName,'_depth.dat']); 
+                thisFile.download(destName_depth);                
                 fprintf('%s downloaded \n',[sceneName,'_depth.dat']);
             catch
                 fprintf('%s not found \n',[sceneName,'_depth.dat']);
@@ -117,10 +111,8 @@ for tt = 1:length(obj.targets)
         destName_mesh = fullfile(destDir,[sceneName,'_mesh.dat']);
         if ~exist(destName_mesh,'file')
             try
-                st.fileDownload([sceneName,'_mesh.dat'],...
-                    'container type', 'acquisition' , ...
-                    'container id',  dataId ,...
-                    'destination',destName_mesh);
+                thisFile  = acq.getFile([sceneName,'_mesh.dat']); 
+                thisFile.download(destName_mesh);
                 fprintf('%s downloaded \n',[sceneName,'_mesh.dat']);
             catch
                 fprintf('%s not found \n',[sceneName,'_mesh.dat']);
@@ -136,10 +128,8 @@ for tt = 1:length(obj.targets)
         label = destName_label;
         if ~exist(destName_label,'file')
             try
-                st.fileDownload([sceneName,'_mesh_mesh.txt'],...
-                    'container type', 'acquisition' , ...
-                    'container id',  dataId ,...
-                    'destination',destName_label);
+                thisFile  = acq.getFile([sceneName,'_mesh_mesh.txt']); 
+                thisFile.download(destName_label);               
                 fprintf('%s downloaded \n',[sceneName,'_mesh.txt']);
             catch
                 fprintf('%s not found \n',[sceneName,'_mesh.txt']);
