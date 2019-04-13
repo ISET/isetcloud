@@ -357,7 +357,7 @@ classdef gCloud < handle
                 if p.Results.print
                     % This is a printable listing.  I guess we could
                     % build it ourselves from results
-                    fprintf('\n');
+                    fprintf('-----------------\n');
                     fprintf(['NAME',repmat(' ',1,48),'STATUS   SUCCESSFUL   START',repmat(' ',1,18),'STOP\n']);
                     for ii=1:length(result.items)
                         fprintf('%s ',result.items(ii).metadata.name);
@@ -366,7 +366,7 @@ classdef gCloud < handle
                         fprintf('\t%s ',result.items(ii).status.startTime );
                         fprintf('\t%s\n',result.items(ii).status.completionTime);
                     end
-                    fprintf('\n');
+                    fprintf('-----------------\n');
                 end
             end
                         
