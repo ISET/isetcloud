@@ -358,13 +358,11 @@ classdef gCloud < handle
                     % This is a printable listing.  I guess we could
                     % build it ourselves from results
                     fprintf('-----------------\n');
-                    fprintf(['NAME',repmat(' ',1,48),'STATUS   SUCCESSFUL   START',repmat(' ',1,18),'STOP\n']);
+                    fprintf(['NAME',repmat(' ',1,42),'ACTIVE   START',repmat(' ',1,18),'\n']');
                     for ii=1:length(result.items)
                         fprintf('%s ',result.items(ii).metadata.name);
-                        fprintf('%s ',result.items(ii).status.conditions.type);
-                        fprintf('\t%d ',result.items(ii).status.succeeded);
+                        fprintf('\t%d ',result.items(ii).status.active);
                         fprintf('\t%s ',result.items(ii).status.startTime );
-                        fprintf('\t%s\n',result.items(ii).status.completionTime);
                     end
                     fprintf('-----------------\n');
                 end
