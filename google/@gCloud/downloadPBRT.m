@@ -6,16 +6,30 @@ function isetObj = downloadPBRT( obj, thisR, varargin )
 %  
 % Input (required)
 %   thisR:  A render recipe.
-%
+%    
 % Inputs (optional)
+%   scaleIlluminance -  if true, we scale the mean illuminance by the pupil
+%                       diameter in piDat2ISET 
 %
 % Return
 %  isetObj - a cell array of ISET scene or oi (depending on the recipe
 %            optics)
 %
-% ZL, Vistalab 2017
+% TL/ZL, Vistalab 2017
 %
-% See also: piRender
+% See also: piDat2ISET
+
+%%
+p = inputParser;
+
+varargin = ieParamFormat(varargin);
+
+p.addRequired('thisR',@(x)(isequal(class(x),'recipe') || ischar(x)));
+
+p.addParameter('scaleIlluminance',true,@islogical);
+
+p.parse(thisR,varargin{:});
+scaleIlluminance = p.Results.scaleIlluminance;
 
 %%
 
@@ -48,6 +62,15 @@ for t=1:length(obj.targets)
         disp(result)
     end
     
+    % Convert the dat file to an ISET format
+    outFile = sprintf('%s/renderings/%s.dat',targetFolder,remoteFile);
+    
+    % Convert radiance to optical image
+    ieObject = piDat2ISET(outFile,...
+        'label','radiance',...
+        'recipe',thisR,...
+        'scaleIlluminance',scaleIlluminance);
+    
     % Look for the corresponding depth file (if necessary)
     if(obj.renderDepth)
         cmd = sprintf('gsutil cp %s/renderings/%s_depth.dat %s/renderings/%s_depth.dat',...
@@ -62,63 +85,14 @@ for t=1:length(obj.targets)
         
         % Read the downloaded depth file
          depthOutFile = sprintf('%s/renderings/%s_depth.dat',targetFolder,remoteFile);
-         depthMap = piReadDAT(depthOutFile, 'maxPlanes', 31);
-         depthMap = depthMap(:,:,1);
+        
+         depthImage = piDat2ISET(depthOutFile,'label','depth');
+         if ~isempty(ieObject) && isstruct(ieObject)
+             ieObject = sceneSet(ieObject,'depth map',depthImage);
+         end
+         
     end
-    
-    % Convert the dat file to an ISET format
-    outFile = sprintf('%s/renderings/%s.dat',targetFolder,remoteFile);
-    
-    % This code should be a separate function, and be shared with
-    % piRender.
-    photons = piReadDAT(outFile, 'maxPlanes', 31);
-    
-    ieObjName = sprintf('%s-%s',remoteFile,datestr(now,'mmm-dd,HH:MM'));
-    if strcmp(obj.targets(t).camera.subtype,'perspective')
-        opticsType = 'pinhole';
-    else
-        opticsType = 'lens';
-    end
-    
-    % If radiance, return a scene or optical image
-    switch opticsType
-        case 'lens'
-            % If we used a lens, the ieObject is an optical image (irradiance).
-            
-            % We should set fov or filmDiag here.  We should also set other ray
-            % trace optics parameters here. We are using defaults for now, but we
-            % will find those numbers in the future from inside the radiance.dat
-            % file and put them in here.
-            ieObject = piOICreate(photons,varargin{:});  % Settable parameters passed
-            ieObject = oiSet(ieObject,'name',ieObjName);
-            % I think this should work (BW)
-            if exist('depthMap','var')
-            if(~isempty(depthMap))
-                ieObject = oiSet(ieObject,'depth map',depthMap);
-            end
-            end
-            
-            % This always worked in ISET, but not in ISETBIO.  So I stuck in a
-            % hack to ISETBIO to make it work there temporarily and created an
-            % issue. (BW).
-            ieObject = oiSet(ieObject,'optics model','ray trace');
-            
-        case 'pinhole'
-            % In this case, we the radiance describes the scene, not an oi
-            ieObject = piSceneCreate(photons,'meanLuminance',100);
-            ieObject = sceneSet(ieObject,'name',ieObjName);
-            if exist('depthMap','var')
-            if(~isempty(depthMap))
-                ieObject = sceneSet(ieObject,'depth map',depthMap);
-            end
-            end
-            
-            % There may be other parameters here in this future
-            if strcmp(thisR.get('optics type'),'pinhole')
-                ieObject = sceneSet(ieObject,'fov',thisR.get('fov'));
-            end
-    end
-    
+
     isetObj{t} = ieObject;
     
 end

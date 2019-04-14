@@ -101,11 +101,22 @@ if(obj.renderDepth)
     
     depthRecipe = piRecipeConvertToMetadata(thisR,'metadata','depth');
     
-    % Always overwrite the depth file, but don't copy over the whole directory
+    % Depending on whether we used C4D to export, we create a new
+    % material files that we link with the main pbrt file.
+    if(strcmp(depthRecipe.exporter,'C4D'))
+        creatematerials = true;
+    else
+        creatematerials = false;
+    end
+    
+    % Always overwrite the depth file, but don't copy over the whole
+    % directory.
     piWrite(depthRecipe,...
-        'overwritepbrtfile',true,...
-        'overwritelensfile',false,...
-        'overwriteresources',false);
+        'overwritepbrtfile', true,...
+        'overwritelensfile', false, ...
+        'overwriteresources', false,...
+        'creatematerials',creatematerials);
+        
 end
 
 %% Package up the files for uploading to the k8s

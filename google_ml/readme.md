@@ -1,3 +1,9 @@
+### Dataset Preparation
+If you are using a mac, you should be careful when you convert your images/labels into tfRecord files, because mac automatically create a hidden file named '.DS_Store', which you should delete before run the python convert function.
+Under your source directory, run this: 
+
+`find . -name .DS_Store -type f -delete`
+
 ### Tip1:
 
 For tensorflow v1.8, you need pycocotools to utilize coco metrics on your evaluation process.
@@ -94,3 +100,11 @@ You are able to configure the number of gpus you like to use, add disk storage t
 Once you logged in, run`jupyter-notebook --no-browser --port=7000`, you will get a url like
 `http://localhost:7000/?token=xxxxxxxxxxxxxxxxx`, just replace "localhost" with "35.277.146.166", then visit the url on your local browser. 
 Now you can run your machine learning tasks with jupyter notebook.
+
+## 02/08/2019 tensorflow doesnot work on distributed GPUs, so I am switching to pytorch
+Facebook has a github branch named [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark) providing faster rcnn and maskrcnn pretrained models and training & evaluation tools.
+### Note
+I am using cuda9.2 cudnn7.2 pytorch-nightly with cuda92: conda install pytorch-nightly cuda92 -c pytorch
+
+
+
