@@ -357,14 +357,29 @@ classdef gCloud < handle
                 if p.Results.print
                     % This is a printable listing.  I guess we could
                     % build it ourselves from results
-                    fprintf('-----------------\n');
-                    fprintf(['NAME',repmat(' ',1,42),'ACTIVE   START',repmat(' ',1,18),'\n']');
+                    succeeded = [];
+                    fprintf('\n----Active-------\n');
+                    fprintf(['ITEM','NAME',repmat(' ',1,42),'STATUS   START',repmat(' ',1,18),'\n']');
                     for ii=1:length(result.items)
-                        fprintf('%s ',result.items(ii).metadata.name);
-                        fprintf('\t%d ',result.items(ii).status.active);
-                        fprintf('\t%s ',result.items(ii).status.startTime );
+                        try
+                            if result.items(ii).status.succeeded
+                                succeeded = [succeeded,ii];
+                            end
+                        catch
+                            fprintf('%d ',ii);
+                            fprintf('%s ',result.items(ii).metadata.name);
+                            fprintf('\t%d ',result.items(ii).status.active);
+                            fprintf('\t%s ',result.items(ii).status.startTime );
+                        end
                     end
-                    fprintf('-----------------\n');
+                    fprintf('\n----Succeeded------\n');
+                    for ii=1:length(succeeded)
+                        thisJob = succeeded(ii);
+                        fprintf('%d %s. Started at %s',...
+                            thisJob,result.items(thisJob).metadata.name,...
+                            result.items(thisJob).status.startTime);
+                    end
+                    fprintf('\n\n');
                 end
             end
                         
