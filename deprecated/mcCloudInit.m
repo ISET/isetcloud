@@ -1,4 +1,4 @@
-function [gs, kube] = rtbCloudInit( hints )
+function [gs, kube] = mcCloudInit( hints )
 % Sets up the container engine on a google cloud instance via kubernetes
 %
 % We assume that you have google cloud SDK installed on your system and

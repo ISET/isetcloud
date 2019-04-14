@@ -498,23 +498,21 @@ classdef gCloud < handle
             % Decode the json return data
             try
                 result = jsondecode(result_original);
+                if ~isempty(result.items)
+                    pod = cell(length(result.items),1);
+                    for ii=1:length(result.items)
+                        podname= result.items(ii).metadata.name;
+                        if p.Results.print
+                            fprintf('%s is %s \n', podname, result.items(ii).status.phase);
+                        end
+                        pod{ii}=podname;
+                    end
+                end
             catch
                 warning('jsondecode error. result_original\n %s',result_original);
-            end
-            
-            if ~isempty(result.items)
-                pod = cell(length(result.items),1);
-                for ii=1:length(result.items)
-                    podname= result.items(ii).metadata.name;
-                    if p.Results.print
-                        fprintf('%s is %s \n', podname, result.items(ii).status.phase); 
-                    end
-                    pod{ii}=podname;
-                end
-            else
-                fprintf('No resources found\n');
+                fprintf('No resources found.  Returning empty pod.\n');
                 pod = [];
-            end
+            end            
         end
         
         function [result,status,cmd] = PodDescribe(obj,podname)
@@ -523,13 +521,10 @@ classdef gCloud < handle
         end
         
         function [result, status,cmd] = Podlog(obj,podname)
-                cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
-%                 [status, result] = system(cmd);
-%                 if status, warning('Log not returned correctly\n'); end
-                fprintf('%s\n',cmd);
+            % This seems either deprecated or wrong
+            cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
+            fprintf('%s\n',cmd);
         end
-        
-
             
     end
 end
