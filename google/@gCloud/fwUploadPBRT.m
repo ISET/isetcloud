@@ -19,13 +19,12 @@ function [sceneSession,current_id] = fwUploadPBRT(obj, thisR, varargin )
 %   thisR:  A render recipe.
 %
 % Optional key/value pairs
-%
-%   materials - upload materials.pbrt, default is true
-%   geometry  - upload geomety.pbrt, default is true
-%   resources - upload rendering dependent files, default is true
+%   road
+%   scitran
 %
 % Returns
 %   sceneSession - The bucket where the files were copied
+%   current_id   - ID of the acquisition created for the upload.
 %
 % Descriptions
 %  Using the information in the render recipe (thisR), we find and zip
@@ -41,41 +40,21 @@ function [sceneSession,current_id] = fwUploadPBRT(obj, thisR, varargin )
 %
 % ZL,  Vistasoft
 % 
+% See also:
+%   
+
 % We assume gcp is initialized
 %
 % Example 1
 %{
-  % The chess set scene has resource files
-  fname = fullfile(piRootPath,'data','ChessSet','chessSet.pbrt');
-  if ~exist(fname,'file'), error('File not found'); end
-  thisR = piRead(fname);
-  cloudFolder = gcp.uploadPBRT(thisR);
-  gcp.ls(cloudFolder)
-%}
-
-% Example 2
-%{
-  % No resources files for teapot case
-  fname = fullfile(piRootPath,'data','teapot-area','teapot-area-light.pbrt');
-  if ~exist(fname,'file'), error('File not found'); end
-  thisR = piRead(fname);
-  cloudFolder = gcp.uploadPBRT(thisR);
-  gcp.ls(cloudFolder)
 %}
 
 %%
-p = inputParser;
 
 varargin = ieParamFormat(varargin);  % Allow spaces and capitalization
 
+p = inputParser;
 p.addRequired('recipe',@(x)(isa(x,'recipe')));
-
-% Specify whether we upload a *_materials.pbrt
-p.addParameter('materials',true,@islogical);  
-
-% Specify whether we upload a *_geometry.pbrt
-p.addParameter('geometry',true,@islogical); 
-
 p.addParameter('road',[]);
 
 % flywheel 
@@ -83,8 +62,6 @@ p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
 
 p.parse(thisR,varargin{:});
 
-materials    = p.Results.materials;     % Upload materials files (logical)
-geometry     = p.Results.geometry;      % Upload geometry files (logical)
 road         = p.Results.road;
 st           = p.Results.scitran;     % flywheel
 %% Write out the depth file, if required
@@ -134,47 +111,69 @@ if ~exist(pbrtSceneFile,'file')
     error('Could not find pbrt scene file %s\n',pbrtSceneFile);
 end
 
-%
+% Identify the project
 project = st.lookup('wandell/Graphics assets');
+
+% Identify the session
 sceneSession = project.sessions.findOne('label=scenes_pbrt');
-% create an acquisition
+
+% Create an acquisition
+%{
+%}
+
+% This should be updated.  The return is a struct with three IDs for the
+% project, session and acquisition.  It takes too long to run now because
+% containerCreate uses the old 'exist' method.  After we speed that up, we
+% should fix this code to go faster as well.
 current_id = st.containerCreate('Wandell Lab', 'Graphics assets',...
-    'session','scenes_pbrt','acquisition',sceneName);
-% Assign flywheel information to gcp
+    'session','scenes_pbrt',...
+    'acquisition',sceneName);
+
+% Assign Flywheel information to gCloud object
 obj.fwAPI.sceneFilesID  = current_id;
 obj.fwAPI.key = st.showToken;
 obj.fwAPI.InfoList = road.fwList;
+
 fwproject = st.search('project','project label exact','Renderings');
 obj.fwAPI.projectID = fwproject{1}.project.id;
 
 if ~isempty(current_id.acquisition)
+    % Prefer that we use 
+    % thisAcq = st.get(current_id);
+    % fprintf('%s acquisition created \n',thisAcq.label);
     fprintf('%s acquisition created \n',sceneName);
 end
+
+%% Start the upload
 status= st.fileUpload(pbrtSceneFile,current_id.acquisition,'acquisition');
 if isempty(status)
     fprintf('%s.pbrt uploaded \n',sceneName);
 else
-    error('cp scene file to flywheel failed\n');
+    error('Upload of scene file to Flywheel failed\n');
 end
 
-%% Copy geometry and material files
+%% Copy  material files
  
 pbrtMaterialFile = fullfile(sceneFolder,sprintf('%s_materials.pbrt',sceneName));
-pbrtGeometryFile = fullfile(sceneFolder,sprintf('%s_geometry.pbrt',sceneName));
 
 status= st.fileUpload(pbrtMaterialFile,current_id.acquisition,'acquisition');
 if  isempty(status)
     fprintf('%s uploaded \n',sprintf('%s_materials.pbrt',sceneName));
 else
-    error('cp scene file to flywheel failed\n');
+    error('cp scene materials file to flywheel failed\n');
 end
+
+%% Copy  geometry files
+
+pbrtGeometryFile = fullfile(sceneFolder,sprintf('%s_geometry.pbrt',sceneName));
 
 status= st.fileUpload(pbrtGeometryFile,current_id.acquisition,'acquisition');
 if  isempty(status)
     fprintf('%s uploaded \n',sprintf('%s_geometry.pbrt',sceneName));
 else
-    error('cp scene file to flywheel failed\n');
+    error('cp scene geometry file to flywheel failed\n');
 end
+
 %% Copy depth file
 if(obj.renderDepth)
     f_depth  = sprintf('%s_depth.pbrt',sceneName);
@@ -204,6 +203,7 @@ if(obj.renderDepth)
     end
 end
 %% piGeometryRead creates a json file of current recipe, upload recipe.
+
 recepeJson = sprintf('%s.json',sceneName);
 pbrtRecipeJson = fullfile(sceneFolder,recepeJson);
 status= st.fileUpload(pbrtRecipeJson,current_id.acquisition,'acquisition');
@@ -212,7 +212,9 @@ if  isempty(status)
 else
     error('cp recipeJson of scene file to flywheel failed\n');
 end
+
 %% save and upload gcp.target json file
+
 target.camera    = thisR.camera;
 target.local     = thisR.outputFile;
 target.remote    = obj.fwAPI.projectID;
@@ -228,7 +230,6 @@ if  isempty(status)
 else
     error('cp targetJson of scene file to flywheel failed\n');
 end
-
 
 disp('*** All files uploaded to Flywheel. ***')
 end

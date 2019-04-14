@@ -372,7 +372,7 @@ classdef gCloud < handle
                             fprintf('\t%s ',result.items(ii).status.startTime );
                         end
                     end
-                    fprintf('\n----Succeeded------\n');
+                    fprintf('\n\n----Succeeded------\n');
                     for ii=1:length(succeeded)
                         thisJob = succeeded(ii);
                         fprintf('%d %s. Started at %s',...
@@ -520,10 +520,12 @@ classdef gCloud < handle
             [status, result] = system(cmd);
         end
         
-        function [result, status,cmd] = Podlog(obj,podname)
-            % This seems either deprecated or wrong
+        function cmd = Podlog(obj,podname)
+            % The returned cmd can be copied into the terminal and you will
+            % learn about the activity of the POD with this name.  
+            % POD is the process
             cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
-            fprintf('%s\n',cmd);
+            fprintf('Copy this into the terminal to see the log:\n%s\n',cmd);
         end
             
     end
