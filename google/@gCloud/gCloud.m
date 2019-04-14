@@ -49,16 +49,18 @@ classdef gCloud < handle
         zone         = 'us-central1-a';
         instanceType = 'n1-highcpu-32';
         minInstances = 1;     %
-        maxInstances = 10;    %
+        maxInstances = 100;    %
         preemptible  = true;  %
         autoscaling  = true;  %
         namespace    = '';    %
-        
+        fwAPI;
         dockerImage  = '';
         dockerAccount= '';
         
         % Depth map flag
         renderDepth = false;
+        % Mesh flag
+        renderMesh  = false;
         
         % Descriptor
         % TL: An extra property for misc descriptors that we want
@@ -66,7 +68,7 @@ classdef gCloud < handle
         % sceneEye object to the gCloud object so that each target will have
         % a corresponding sceneEye object. 
         miscDescriptor = [];
-        
+        bypass   = false;
         targets;    
         
     end
@@ -83,21 +85,22 @@ classdef gCloud < handle
             varargin = ieParamFormat(varargin);
             
             % File is x.json
-            p.addParameter('configuration','',@(x)(exist([x,'.json'],'file')==2));
+            p.addParameter('configuration','cloudRendering-pbrtv3-west1b-standard-32cpu-120m-flywheel',@(x)(exist([x,'.json'],'file')==2));
             
             p.addParameter('provider','Google',@ischar);
             p.addParameter('projectid','primal-surfer-140120',@ischar);
             p.addParameter('clustername','pbrtcloud',@ischar);
-            p.addParameter('zone','us-central1-a',@ischar);
+            p.addParameter('zone','us-west1-b',@ischar);
             p.addParameter('instancetype','n1-highcpu-32',@ischar);
             p.addParameter('mininstances',1,@isnumeric);
-            p.addParameter('maxinstances',10,@isnumeric);
+            p.addParameter('maxinstances',20,@isnumeric);
             p.addParameter('preemptible',true,@islogical);
             p.addParameter('autoscaling',true,@islogical);
             p.addParameter('cloudbucket','',@ischar);
             p.addParameter('dockerimage','',@ischar);
             p.addParameter('dockeraccount','',@ischar);
             p.addParameter('renderdepth',false,@islogical);
+            p.addParameter('bypass',false,@islogical);
             
             p.parse(varargin{:});
             
@@ -114,6 +117,7 @@ classdef gCloud < handle
             obj.dockerImage  = p.Results.dockerimage;
             obj.dockerAccount= p.Results.dockeraccount;
             obj.renderDepth  = p.Results.renderdepth;
+            obj.bypass       = p.Results.bypass;
             
             [status, obj.namespace] = system('echo -n $USER');
             if status, error('Problem setting name space'); end
@@ -133,8 +137,9 @@ classdef gCloud < handle
             end
             
             % Go for it
-            obj.init();
-
+            if ~obj.bypass
+                obj.init();
+            end
         end
         
         function [result, status, cmd]=clusterDelete(obj)
@@ -261,7 +266,7 @@ classdef gCloud < handle
                 'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
                 'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
                 'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth',...
-                'nodeConfig','locations','subnetwork'};
+                'nodeConfig','locations','subnetwork','networkConfig','location'};
             result_clusters = rmfield(result_clusters,fields);
             result_clusters = orderfields(result_clusters, ...
                 {'name', 'zone', 'status','createTime','currentNodeCount'});
@@ -299,7 +304,7 @@ classdef gCloud < handle
             if isempty(obj.targets)
                 fprintf('No targets\n');
             else
-                fprintf('\nCamera\t\t local\t\t remote\t\t depth\n')
+                fprintf('\nCamera\t\t local\t\t remote\t\t metadata\n')
                 fprintf('--------------------------------------------------------\n');
                 for ii =1:length(obj.targets)
                     cType = obj.targets(ii).camera.subtype;
@@ -352,16 +357,29 @@ classdef gCloud < handle
                 if p.Results.print
                     % This is a printable listing.  I guess we could
                     % build it ourselves from results
-                    fprintf('\n');
-                    fprintf(['NAME',repmat(' ',1,48),'STATUS   SUCCESSFUL   START',repmat(' ',1,18),'STOP\n']);
+                    succeeded = [];
+                    fprintf('\n----Active-------\n');
+                    fprintf(['ITEM','NAME',repmat(' ',1,42),'STATUS   START',repmat(' ',1,18),'\n']');
                     for ii=1:length(result.items)
-                        fprintf('%s ',result.items(ii).metadata.name);
-                        fprintf('%s ',result.items(ii).status.conditions.type);
-                        fprintf('\t%d ',result.items(ii).status.succeeded);
-                        fprintf('\t%s ',result.items(ii).status.startTime );
-                        fprintf('\t%s\n',result.items(ii).status.completionTime);
+                        try
+                            if result.items(ii).status.succeeded
+                                succeeded = [succeeded,ii];
+                            end
+                        catch
+                            fprintf('%d ',ii);
+                            fprintf('%s ',result.items(ii).metadata.name);
+                            fprintf('\t%d ',result.items(ii).status.active);
+                            fprintf('\t%s ',result.items(ii).status.startTime );
+                        end
                     end
-                    fprintf('\n');
+                    fprintf('\n----Succeeded------\n');
+                    for ii=1:length(succeeded)
+                        thisJob = succeeded(ii);
+                        fprintf('%d %s. Started at %s',...
+                            thisJob,result.items(thisJob).metadata.name,...
+                            result.items(thisJob).status.startTime);
+                    end
+                    fprintf('\n\n');
                 end
             end
                         
@@ -506,9 +524,9 @@ classdef gCloud < handle
         
         function [result, status,cmd] = Podlog(obj,podname)
                 cmd = sprintf('kubectl logs -f --namespace=%s %s',obj.namespace,podname);
-                [status, result] = system(cmd);
-                if status, warning('Log not returned correctly\n'); end
-                fprintf('%s\n',result);
+%                 [status, result] = system(cmd);
+%                 if status, warning('Log not returned correctly\n'); end
+                fprintf('%s\n',cmd);
         end
         
 

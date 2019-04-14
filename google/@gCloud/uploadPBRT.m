@@ -112,11 +112,24 @@ if(obj.renderDepth)
     % Always overwrite the depth file, but don't copy over the whole
     % directory.
     piWrite(depthRecipe,...
-        'overwritepbrtfile', true,...
-        'overwritelensfile', false, ...
-        'overwriteresources', false,...
-        'creatematerials',creatematerials);
-        
+
+        'overwritepbrtfile',true,...
+        'overwritelensfile',false,...
+        'overwriteresources',false,...
+        'overwritegeometry',false);
+end
+
+%% Write out the mesh file, if required
+if(obj.renderMesh)
+    
+    meshRecipe = piRecipeConvertToMetadata(thisR,'metadata','mesh');
+    
+    % Always overwrite the depth file, but don't copy over the whole directory
+    piWrite(meshRecipe,...
+        'overwritepbrtfile',true,...
+        'overwritelensfile',false,...
+        'overwriteresources',false,...
+        'overwritegeometry',false);
 end
 
 %% Package up the files for uploading to the k8s
@@ -128,15 +141,18 @@ end
 %  * a zipped resources file
 
 % These are the PBRT scene file and resources
-pbrtScene = thisR.get('output file');
-if ~exist(pbrtScene,'file')
-    error('PBRT scene not found %s\n',pbrtScene);
-else
-    [sceneFolder, sceneName] = fileparts(pbrtScene);
-end
-
+pbrtScene = thisR.get('input file');
+%% Render recipe is created by json file on flywheel, so no input pbrtScene file for this case --zhenyi0908
+% if ~exist(pbrtScene,'file')
+%     error('PBRT scene not found %s\n',pbrtScene);
+% else
+%     [sceneFolder, sceneName] = fileparts(pbrtScene);
+% end
+%%
+[sceneFolder, sceneName] = fileparts(pbrtScene);
 % We will make a zip file of the whole folder.  If it wasn't passed,
 % use this as the default
+if resources
 if isempty(zipFileName)
     % Always based on the input file, not the output file.
     pbrtScene = thisR.get('input file');
@@ -171,7 +187,7 @@ else
     % If output file (zipFileName) is already present, this command
     % updates the file contents.
     fprintf('Zipping into %s\n',zipFileName);
-    cmd = sprintf('zip -r %s %s -x renderings/*  *.zip *.jpg *.pbrt',zipFileName,allFiles);
+    cmd = sprintf('zip -r %s %s -x *.jpg *.pbrt renderings/* *.zip *.json',zipFileName,allFiles);
     status = system(cmd);
     
     % When there are no resource files, the zip file is empty and status is
@@ -188,7 +204,9 @@ else
     
     cd(currentPath);  % Return
 end
-
+else
+    disp('*******Zipping Skipped******');
+end
 %%  Copy the local data to the k8s bucket storage
 
 pbrtSceneFile = thisR.get('output file');
@@ -266,29 +284,20 @@ if(obj.renderDepth)
     
 end
 
-%% Check if the renderings directory is there.  If not, make it.
-
-%{
-% There should be a renderings folder.  We are not sure who creates it.
-cloudFiles = obj.ls('folder',sceneName);
-found = false;
-for ii=1:numel(cloudFiles)
-    [p,n,e] = fileparts(cloudFiles{ii});
-    if strcmp(n,'renderings'), found = true; break; end
-end
-
-if ~found
-    % Create the renderings folder
-    mkdir('renderings');
-    system('touch renderings/keepme');
-    cmd = sprintf('gsutil cp -r renderings %s/',cloudFolder);
+%% Copy mesh file
+if(obj.renderDepth)
+    
+    f_mesh  = sprintf('%s_mesh.pbrt',f);
+    pbrtMeshFile = fullfile(p,f_mesh);
+    cmd = sprintf('gsutil cp  %s %s/',pbrtMeshFile,...
+        cloudFolder);
     [status, result] = system(cmd);
     if status
-        warning('Problem with creating renderings directory');
-        disp(result)
+        error('Mesh file cp to cloud folder failed\n %s',result);
     end
+    
 end
-%}
+
 
 end
 
