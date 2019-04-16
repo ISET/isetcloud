@@ -21,8 +21,8 @@ function gcp = targetDelete(gcp, val, varargin)
 %% Parse
 p = inputParser;
 
-p.addRequired('gcp',@(x)(isequal(class(x,'gCloud'))));
-p.addRequired('val',@isinteger);
+p.addRequired('gcp',@(x)(isequal(class(x),'gCloud')));
+p.addRequired('val',@isscalar);
 
 p.parse(gcp,val,varargin{:});
 val = p.Results.val;
