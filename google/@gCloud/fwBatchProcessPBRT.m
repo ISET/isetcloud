@@ -48,7 +48,7 @@ for tt = 1:length(obj.targets)
     sessionName = strsplit(sceneName,'_');
     sessionName = sessionName{1};
     
-    project = st.lookup('wandell/Renderings');
+    project = st.lookup('wandell/Graphics auto renderings');
     session = project.sessions.findOne(sprintf('label=%s',sessionName));
     try
         acq = session.acquisitions.findOne(sprintf('label=%s',sceneName));
@@ -82,7 +82,7 @@ for tt = 1:length(obj.targets)
     
     % Download scene recipe
     destName_recipe = fullfile(destDir,[sceneName,'.json']);
-    GAssets = st.lookup('wandell/Graphics assets');
+    GAssets = st.lookup('wandell/Graphics auto assets');
     sessionRecipe = GAssets.sessions.findOne('label=scenes_pbrt');
     acqRecipe= sessionRecipe.acquisitions.findOne(sprintf('label=%s',sceneName));
     

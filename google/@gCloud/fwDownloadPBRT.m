@@ -38,7 +38,7 @@ for t=1:length(obj.targets)
     % cloud
     sessionName = strsplit(sceneName,'_');
     sessionName = sessionName{1};
-    scene_acq =sprintf('wandell/Renderings/%s/%s',sessionName,sceneName);
+    scene_acq =sprintf('wandell/Graphics auto renderings/%s/%s',sessionName,sceneName);
     acquisition = st.fw.lookup(scene_acq);
     dataId      = acquisition.id;
     

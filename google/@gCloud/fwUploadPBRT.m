@@ -135,16 +135,16 @@ if ~exist(pbrtSceneFile,'file')
 end
 
 %
-project = st.lookup('wandell/Graphics assets');
+project = st.lookup('wandell/Graphics auto assets');
 sceneSession = project.sessions.findOne('label=scenes_pbrt');
 % create an acquisition
-current_id = st.containerCreate('Wandell Lab', 'Graphics assets',...
+current_id = st.containerCreate('Wandell Lab', 'Graphics auto assets',...
     'session','scenes_pbrt','acquisition',sceneName);
 % Assign flywheel information to gcp
 obj.fwAPI.sceneFilesID  = current_id;
 obj.fwAPI.key = st.showToken;
 obj.fwAPI.InfoList = road.fwList;
-fwproject = st.search('project','project label exact','Renderings');
+fwproject = st.search('project','project label exact','Graphics auto renderings');
 obj.fwAPI.projectID = fwproject{1}.project.id;
 
 if ~isempty(current_id.acquisition)
