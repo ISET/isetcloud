@@ -49,10 +49,10 @@ fprintf('Project is set to %s\n',result);
 %% List and possibly create the cluster
 
 cmd = sprintf('gcloud container clusters list --filter=%s',obj.clusterName);
-[~, result] = system(cmd);
+[status, result] = system(cmd);
 
 % If the returned name is empty, create the cluster with this name
-if isempty(result)
+if ~piContains(result,obj.clusterName)
     
     cmd = sprintf('gcloud container clusters create %s --num-nodes=1 --max-nodes-per-pool=100 --machine-type=%s --zone=%s --scopes default,storage-rw',...
         obj.clusterName, obj.instanceType, obj.zone);

@@ -33,10 +33,13 @@ varargin = ieParamFormat(varargin);
 p = inputParser;
 p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
 p.addParameter('destinationdir','',@ischar);
+p.addParameter('scenesubject','wandell/Graphics auto/scenes');
 p.parse(varargin{:});
 
 st      = p.Results.scitran;
 destDir = p.Results.destinationdir;
+sceneSubject = p.Results.scenesubject;
+
 if isempty(st), st = scitran('stanfordlabs');end
 
 %% We return a file for each of the gcloud targets
@@ -48,8 +51,8 @@ for tt = 1:length(obj.targets)
     sessionName = strsplit(sceneName,'_');
     sessionName = sessionName{1};
     
-    project = st.lookup('wandell/Renderings');
-    session = project.sessions.findOne(sprintf('label=%s',sessionName));
+    renderSubject = st.lookup('wandell/Graphics auto renderings/renderings');
+    session = renderSubject.sessions.findOne(sprintf('label=%s',sessionName));
     try
         acq = session.acquisitions.findOne(sprintf('label=%s',sceneName));
     catch
@@ -72,7 +75,7 @@ for tt = 1:length(obj.targets)
             fprintf('%s downloaded. \n',[sceneName,'.dat']);
         catch
             % Can not find it
-            fprintf('Target %d Not found in Flywheel',tt);
+            fprintf('Target %d Not found in Flywheel. \n',tt);
             continue
         end
     else
@@ -80,10 +83,14 @@ for tt = 1:length(obj.targets)
         fprintf('Target %s already exists. \n',[sceneName,'.dat']);
     end
     
-    % Download scene recipe
+    % Download scene recipe from Graphics assets project.
     destName_recipe = fullfile(destDir,[sceneName,'.json']);
-    GAssets = st.lookup('wandell/Graphics assets');
-    sessionRecipe = GAssets.sessions.findOne('label=scenes_pbrt');
+    acqRecipe =  st.lookup([sceneSubject,...
+                            '/', sessionName,...
+                            '/',sceneName]);
+%     thisSession  =  sceneSubject.addSession('label', sessionName{1});
+%     GAssets = st.lookup('wandell/Graphics auto/scenes');
+%     sessionRecipe = thisSession.findOne('label=scenes_pbrt');
     acqRecipe= sessionRecipe.acquisitions.findOne(sprintf('label=%s',sceneName));
     
     % download the recipe json file
@@ -101,13 +108,7 @@ for tt = 1:length(obj.targets)
     end
     
     % Read it and parse it into the local recipe class
-    thisR_tmp = jsonread(destName_recipe);
-    fds = fieldnames(thisR_tmp);
-    thisR = recipe;
-    for dd = 1:length(fds)
-        thisR.(fds{dd})= thisR_tmp.(fds{dd});
-    end
-    
+    thisR = piJson2Recipe(destName_recipe);
     % If it has depth
     if(obj.renderDepth)
         destName_depth = fullfile(destDir,[sceneName,'_depth.dat']);
@@ -123,8 +124,26 @@ for tt = 1:length(obj.targets)
         else
             fprintf('%s already exist \n',[sceneName,'_depth.dat']);
         end
-        depthMap = piReadDAT(destName_depth, 'maxPlanes', 31);
-        depthMap = depthMap(:,:,1);
+        depthMap = piDat2ISET(destName_depth, 'label', 'depth');
+    end
+    
+    % If it has coordinate
+    if (obj.renderPointCloud)
+        destName_coord = fullfile(destDir,[sceneName,'_coordinates.dat']);
+        if ~exist(destName_coord,'file')
+            try
+                thisFile  = acq.getFile([sceneName,'_coordinates.dat']);
+                thisFile.download(destName_coord);
+                fprintf('%s downloaded \n',[sceneName,'_coordinates.dat']);
+            catch
+                fprintf('%s not found \n',[sceneName,'_coordinates.dat']);
+                continue
+            end
+        else
+            fprintf('%s already exist \n',[sceneName,'_coordinates.dat']);
+        end
+        
+        coordMap = piDat2ISET(destName_coord,'label','coordinates');
     end
     
     % If it has a mesh
@@ -142,8 +161,7 @@ for tt = 1:length(obj.targets)
         else
             fprintf('%s already exist \n',[sceneName,'_mesh.dat']);
         end
-        meshData = piReadDAT(destName_mesh, 'maxPlanes', 31);
-        meshImage = meshData(:,:,1);
+        meshImage = piDat2ISET(destName_mesh, 'label', 'mesh');
         
         % get label file
         destName_label = fullfile(destDir,[sceneName,'_mesh.txt']);
@@ -183,14 +201,20 @@ for tt = 1:length(obj.targets)
     ieObject.metadata.camera     = thisR.camera;
     ieObject.metadata.film       = thisR.film;
     
-    if obj.renderDepth==1 && obj.renderMesh==1
+    if obj.renderMesh==1
         % mesh_txt
         data=importdata(label);
         meshtxt = regexp(data, '\s+', 'split');
-        ieObject = sceneSet(ieObject,'depth map',depthMap);
+        
         meshImage = uint16(meshImage);
-        ieObject.metadata.meshImage = meshImage;
-        ieObject.metadata.meshtxt   = meshtxt;
+        ieObject.metadata.meshImage  = meshImage;
+        ieObject.metadata.meshtxt    = meshtxt;
+    end
+    if obj.renderDepth
+        ieObject = sceneSet(ieObject,'depth map',depthMap); 
+    end
+    if obj.renderPointCloud
+        ieObject.metadata.pointcloud = coordMap;
     end
     
     %% Save the oi
@@ -204,10 +228,9 @@ for tt = 1:length(obj.targets)
     clearvars -global -except gcp st destDir
     delete(destName_irradiance);
     
-    if obj.renderDepth==1 && obj.renderMesh==1
-        delete(destName_mesh);
-        delete(destName_depth);
-    end
+    if obj.renderDepth, delete(destName_depth);end
+    if obj.renderMesh, delete(destName_mesh);end
+    if obj.renderPointCloud, delete(destName_coord);end
 end
 
 end

@@ -1,4 +1,4 @@
-function [sceneSession,current_id] = fwUploadPBRT(obj, thisR, varargin )
+function [current_id] = fwUploadPBRT(obj, thisR, varargin )
 % Upload a pbrt scene directory to flywheel for rendering on the cluster
 %
 % Syntax
@@ -38,7 +38,7 @@ function [sceneSession,current_id] = fwUploadPBRT(obj, thisR, varargin )
 %
 % See also: s_gCloud
 %
-% ZL,  Vistasoft
+% Zhenyi Liu,  Vistasoft
 % 
 % See also:
 %   
@@ -56,14 +56,18 @@ varargin = ieParamFormat(varargin);  % Allow spaces and capitalization
 p = inputParser;
 p.addRequired('recipe',@(x)(isa(x,'recipe')));
 p.addParameter('road',[]);
-
+% users can specify different project for the following two parameters
+p.addParameter('renderproject','wandell/Graphics auto renderings');
+p.addParameter('scenesubject','wandell/Graphics auto/scenes'); 
 % flywheel 
 p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
 
 p.parse(thisR,varargin{:});
 
-road         = p.Results.road;
-st           = p.Results.scitran;     % flywheel
+road          = p.Results.road;
+st            = p.Results.scitran;       % flywheel
+renderProject = p.Results.renderproject;% where you asve your rendered data
+sceneSubject = p.Results.scenesubject;
 %% Write out the depth file, if required
 if(obj.renderDepth)
     
@@ -93,7 +97,20 @@ if(obj.renderMesh)
         'creatematerials',true,...
         'overwritegeometry',true);
 end
-
+%% Write out pointCloud file, if required
+if(obj.renderPointCloud)
+    
+    meshRecipe = piRecipeConvertToMetadata(thisR,'metadata','coordinates');
+    
+    % Always overwrite the mesh file, but don't copy over the whole directory
+    piWrite(meshRecipe,...
+        'overwritepbrtfile',true,...
+        'overwritelensfile',false,...
+        'overwriteresources',false,...
+        'overwritematerials',false,...
+        'creatematerials',true,...
+        'overwritegeometry',true);
+end
 %% These are the PBRT scene file and resources
 % pbrtScene = thisR.get('input file');
 %% Render recipe is created by json file on flywheel, so no input pbrtScene file for this case --zhenyi0908
@@ -111,104 +128,103 @@ if ~exist(pbrtSceneFile,'file')
     error('Could not find pbrt scene file %s\n',pbrtSceneFile);
 end
 
-% Identify the project
-project = st.lookup('wandell/Graphics assets');
+%% NEED to specify subject
+sessionName = strsplit(sceneName,'_');
+% current_id = st.containerCreate('Wandell Lab', 'Graphics auto',...
+%     'subject','scenes',...
+%     'session',sessionName{1},...
+%     'acquisition',sceneName);
 
-% Identify the session
-sceneSession = project.sessions.findOne('label=scenes_pbrt');
-
-% Create an acquisition
-%{
-%}
-
-% This should be updated.  The return is a struct with three IDs for the
-% project, session and acquisition.  It takes too long to run now because
-% containerCreate uses the old 'exist' method.  After we speed that up, we
-% should fix this code to go faster as well.
-current_id = st.containerCreate('Wandell Lab', 'Graphics assets',...
-    'session','scenes_pbrt',...
-    'acquisition',sceneName);
-
+sceneSubject =  st.lookup(sceneSubject);
+thisSession  =  sceneSubject.addSession('label', sessionName{1});
+thisAcq      = thisSession.addAcquisition('label', sceneName);
+current_id = thisAcq.id;
 % Assign Flywheel information to gCloud object
 obj.fwAPI.sceneFilesID  = current_id;
 obj.fwAPI.key = st.showToken;
 obj.fwAPI.InfoList = road.fwList;
 
-fwproject = st.search('project','project label exact','Renderings');
-obj.fwAPI.projectID = fwproject{1}.project.id;
+fwproject = st.lookup(renderProject);
+obj.fwAPI.projectID = fwproject.id;
 
-if ~isempty(current_id.acquisition)
-    % Prefer that we use 
-    % thisAcq = st.get(current_id);
-    % fprintf('%s acquisition created \n',thisAcq.label);
-    fprintf('%s acquisition created \n',sceneName);
+if ~isempty(current_id)
+    fprintf('%s acquisition created \n', sceneName);
 end
-
 %% Start the upload
-status= st.fileUpload(pbrtSceneFile,current_id.acquisition,'acquisition');
+status= st.fileUpload(pbrtSceneFile,current_id,'acquisition');
 if isempty(status)
-    fprintf('%s.pbrt uploaded \n',sceneName);
+    fprintf('%s.pbrt uploaded \n', sceneName);
 else
     error('Upload of scene file to Flywheel failed\n');
 end
-
 %% Copy  material files
  
-pbrtMaterialFile = fullfile(sceneFolder,sprintf('%s_materials.pbrt',sceneName));
+pbrtMaterialFile = fullfile(sceneFolder, sprintf('%s_materials.pbrt', sceneName));
 
-status= st.fileUpload(pbrtMaterialFile,current_id.acquisition,'acquisition');
+status= st.fileUpload(pbrtMaterialFile,current_id, 'acquisition');
 if  isempty(status)
-    fprintf('%s uploaded \n',sprintf('%s_materials.pbrt',sceneName));
+    fprintf('%s uploaded \n',sprintf('%s_materials.pbrt', sceneName));
 else
     error('cp scene materials file to flywheel failed\n');
 end
-
 %% Copy  geometry files
 
 pbrtGeometryFile = fullfile(sceneFolder,sprintf('%s_geometry.pbrt',sceneName));
 
-status= st.fileUpload(pbrtGeometryFile,current_id.acquisition,'acquisition');
+status= st.fileUpload(pbrtGeometryFile,current_id,'acquisition');
 if  isempty(status)
     fprintf('%s uploaded \n',sprintf('%s_geometry.pbrt',sceneName));
 else
     error('cp scene geometry file to flywheel failed\n');
 end
-
 %% Copy depth file
 if(obj.renderDepth)
     f_depth  = sprintf('%s_depth.pbrt',sceneName);
     pbrtDepthFile = fullfile(sceneFolder,f_depth);
     pbrtDepthGeometryFile = fullfile(sceneFolder,sprintf('%s_depth_geometry.pbrt',sceneName));
-    status= st.fileUpload(pbrtDepthFile,current_id.acquisition,'acquisition');
-    status_geometry= st.fileUpload(pbrtDepthGeometryFile,current_id.acquisition,'acquisition');
+    status          = st.fileUpload(pbrtDepthFile,current_id,'acquisition');
+    status_geometry = st.fileUpload(pbrtDepthGeometryFile, current_id, 'acquisition');
     if isempty(status) || isempty(status_geometry)
         fprintf('%s uploaded \n',f_depth);
     else
         error('cp Depth scene file to flywheel failed\n');
     end
 end
-
 %% Copy mesh file
 if(obj.renderDepth)
     
     f_mesh  = sprintf('%s_mesh.pbrt',sceneName);
     pbrtMeshFile = fullfile(sceneFolder,f_mesh);
     pbrtMeshGeometryFile = fullfile(sceneFolder,sprintf('%s_mesh_geometry.pbrt',sceneName));
-    status= st.fileUpload(pbrtMeshFile,current_id.acquisition,'acquisition');
-    status_geometry= st.fileUpload(pbrtMeshGeometryFile,current_id.acquisition,'acquisition');
+    status          = st.fileUpload(pbrtMeshFile,current_id,'acquisition');
+    status_geometry = st.fileUpload(pbrtMeshGeometryFile, current_id, 'acquisition');
     if  isempty(status) || isempty(status_geometry)
         fprintf('%s uploaded \n',f_mesh);
     else
         error('cp Mesh scene file to flywheel failed\n');
     end
 end
+%% Copy point cloud file
+if(obj.renderDepth)
+    
+    f_coord  = sprintf('%s_coordinates.pbrt',sceneName);
+    pbrtCoordFile = fullfile(sceneFolder,f_coord);
+    pbrtCoordGeometryFile = fullfile(sceneFolder,sprintf('%s_coordinates_geometry.pbrt', sceneName));
+    status          = st.fileUpload(pbrtCoordFile,current_id,'acquisition');
+    status_geometry = st.fileUpload(pbrtCoordGeometryFile, current_id, 'acquisition');
+    if  isempty(status) || isempty(status_geometry)
+        fprintf('%s uploaded \n', f_coord);
+    else
+        error('cp PointCloud scene file to flywheel failed\n');
+    end
+end
 %% piGeometryRead creates a json file of current recipe, upload recipe.
 
-recepeJson = sprintf('%s.json',sceneName);
-pbrtRecipeJson = fullfile(sceneFolder,recepeJson);
-status= st.fileUpload(pbrtRecipeJson,current_id.acquisition,'acquisition');
+recepeJson     = sprintf('%s.json', sceneName);
+pbrtRecipeJson = fullfile(sceneFolder, recepeJson);
+status         = st.fileUpload(pbrtRecipeJson,current_id,'acquisition');
 if  isempty(status)
-    fprintf('%s uploaded \n',recepeJson);
+    fprintf('%s uploaded \n', recepeJson);
 else
     error('cp recipeJson of scene file to flywheel failed\n');
 end
@@ -221,10 +237,11 @@ target.remote    = obj.fwAPI.projectID;
 target.fwAPI     = obj.fwAPI;
 target.depthFlag = obj.renderDepth;
 target.meshFlag  = obj.renderMesh;
+target.coordinateFlag = obj.renderPointCloud;
 targetJsonName = sprintf('%s_target.json',sceneName);
 targetJson=fullfile(sceneFolder,targetJsonName);
 jsonwrite(targetJson,target);
-status= st.fileUpload(targetJson,current_id.acquisition,'acquisition');
+status= st.fileUpload(targetJson,current_id,'acquisition');
 if  isempty(status)
     fprintf('%s uploaded \n',targetJsonName);
 else

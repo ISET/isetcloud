@@ -61,7 +61,8 @@ classdef gCloud < handle
         renderDepth = false;
         % Mesh flag
         renderMesh  = false;
-        
+        % Render point cloud
+        renderPointCloud = false;
         % Descriptor
         % TL: An extra property for misc descriptors that we want
         % to keep consistent with targets. I use it primarily to attach the
@@ -266,7 +267,7 @@ classdef gCloud < handle
                 'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
                 'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
                 'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth',...
-                'nodeConfig','locations','subnetwork','networkConfig','location'};
+                'nodeConfig','locations','subnetwork','networkConfig','location','defaultMaxPodsConstraint'};
             result_clusters = rmfield(result_clusters,fields);
             result_clusters = orderfields(result_clusters, ...
                 {'name', 'zone', 'status','createTime','currentNodeCount'});
@@ -319,7 +320,7 @@ classdef gCloud < handle
         
         %% kubectl related methods
         
-        function [result,status,cmd] = jobsList(obj,varargin)
+        function [jobNames] = jobsList(obj,varargin)
             % List the running jobs in a specific name space or in all
             % name spaces.
             % 
@@ -349,7 +350,8 @@ classdef gCloud < handle
                 cmd = sprintf('kubectl get jobs --namespace=%s -o json',thisNameSpace);
             end
             
-            [status,result] = system(cmd);            
+            [status,result] = system(cmd);  
+            jobNames = [];
             if status
                 error('Name space read error\n%s\n',result);
             else
@@ -370,16 +372,23 @@ classdef gCloud < handle
                             fprintf('%s ',result.items(ii).metadata.name);
                             fprintf('\t%d ',result.items(ii).status.active);
                             fprintf('\t%s ',result.items(ii).status.startTime );
+                            jobNames = [jobNames,' ',result.items(ii).metadata.name];
                         end
                     end
                     fprintf('\n\n----Succeeded------\n');
+                    
                     for ii=1:length(succeeded)
                         thisJob = succeeded(ii);
-                        fprintf('%d %s. Started at %s',...
-                            thisJob,result.items(thisJob).metadata.name,...
+                        fprintf('%d %s. Started at %s \n',...
+                        thisJob,result.items(thisJob).metadata.name,...
                             result.items(thisJob).status.startTime);
+                        jobNames = [jobNames,' ',result.items(thisJob).metadata.name];
                     end
                     fprintf('\n\n');
+                else
+                    for ii=1:length(result.items)
+                        jobNames = [jobNames,' ',result.items(ii).metadata.name];
+                    end
                 end
             end
                         

@@ -1,4 +1,4 @@
-function [ obj ] = render( obj )
+function [ obj ] = render( obj, varargin )
 % Render an ISET3d scene by invoking PBRT docker image on a k8s cluster
 %
 % Syntax
@@ -14,27 +14,39 @@ function [ obj ] = render( obj )
 % See also:  
 %
 
+%%
+p = inputParser;
+p.addParameter('replaceJob',false,@isnumeric);
+p.parse(varargin{:});
+replaceJob = p.Results.replaceJob;
 %% Each rendering job is called a target
 nTargets = length(obj.targets);
 fprintf('Starting %d jobs\n',nTargets);
 
-for t=1:length(obj.targets)
-    
+for t=1:nTargets
     [~,jobName] = fileparts(obj.targets(t).local);
     jobName(jobName == '_' | jobName == '.' | jobName == '-' | jobName == '/' | jobName == ':') = '';
     jobName=lower(jobName);
     jobName = jobName(max(1,length(jobName)-62):end);
     % Kubernetes does not allow two jobs with the same name.
     % We delete any jobs with the current name.
-    kubeCmd = sprintf('kubectl delete job --namespace=%s %s',obj.namespace,jobName);
-    [status, result] = system(kubeCmd);
-    if status
-        if contains(result,'NotFound')
-            % Ignore the status.  We tried to delete something that
-            % did not exist.
-        else
-            % It exists.
-            warning('Problem deleting job %s.\nResult: %s\n',jobName,result);
+    if replaceJob
+        kubeCmd = sprintf('kubectl delete job --namespace=%s %s',obj.namespace,jobName);
+        [status, result] = system(kubeCmd);
+        if status
+            if contains(result,'NotFound')
+                % Ignore the status.  We tried to delete something that
+                % did not exist.
+            else
+                % It exists.
+                warning('Problem deleting job %s.\nResult: %s\n',jobName,result);
+            end
+        end
+    else
+        jobsNamesAll = obj.jobsList('print',false);
+        if piContains(jobsNamesAll, jobName)            
+            fprintf('Job %s is exist. \n', jobName);
+            continue
         end
     end
 
@@ -55,7 +67,7 @@ for t=1:length(obj.targets)
         obj.namespace,...
         (nCores-0.9)*1000,...
         obj.targets(t).fwAPI.key,...
-        obj.targets(t).fwAPI.sceneFilesID.acquisition,...
+        obj.targets(t).fwAPI.sceneFilesID,...
         obj.targets(t).fwAPI.InfoList,...
         obj.targets(t).fwAPI.projectID);
     
