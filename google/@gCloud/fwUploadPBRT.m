@@ -136,7 +136,10 @@ sessionName = strsplit(sceneName,'_');
 %     'acquisition',sceneName);
 
 sceneSubject =  st.lookup(sceneSubject);
-thisSession  =  sceneSubject.addSession('label', sessionName{1});
+thisSession  = sceneSubject.sessions.findOne(sprintf('label=%s',sessionName));
+if isempty(thisSession)
+    thisSession  =  sceneSubject.addSession('label', sessionName);
+end
 thisAcq      = thisSession.addAcquisition('label', sceneName);
 current_id = thisAcq.id;
 % Assign Flywheel information to gCloud object
