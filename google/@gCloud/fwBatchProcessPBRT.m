@@ -91,7 +91,7 @@ for tt = 1:length(obj.targets)
 %     thisSession  =  sceneSubject.addSession('label', sessionName{1});
 %     GAssets = st.lookup('wandell/Graphics auto/scenes');
 %     sessionRecipe = thisSession.findOne('label=scenes_pbrt');
-    acqRecipe= sessionRecipe.acquisitions.findOne(sprintf('label=%s',sceneName));
+%     acqRecipe= sessionRecipe.acquisitions.findOne(sprintf('label=%s',sceneName));
     
     % download the recipe json file
     if ~exist(destName_recipe,'file')

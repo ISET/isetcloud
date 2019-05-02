@@ -136,9 +136,9 @@ sessionName = strsplit(sceneName,'_');
 %     'acquisition',sceneName);
 
 sceneSubject =  st.lookup(sceneSubject);
-thisSession  = sceneSubject.sessions.findOne(sprintf('label=%s',sessionName));
+thisSession  = sceneSubject.sessions.findOne(sprintf('label=%s',sessionName{1}));
 if isempty(thisSession)
-    thisSession  =  sceneSubject.addSession('label', sessionName);
+    thisSession  =  sceneSubject.addSession('label', sessionName{1});
 end
 thisAcq      = thisSession.addAcquisition('label', sceneName);
 current_id = thisAcq.id;
