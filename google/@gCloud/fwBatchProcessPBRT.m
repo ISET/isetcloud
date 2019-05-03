@@ -2,7 +2,7 @@ function ieObject = fwBatchProcessPBRT(obj,varargin )
 % Download radiance and annotation data from flywheel
 %
 % Syntax:
-%  gcp.fwBatchProcessPBRT();
+%  ieObject = gcp.fwBatchProcessPBRT();
 %   
 % Input (required)
 %   obj:    gCloud object
@@ -33,7 +33,9 @@ varargin = ieParamFormat(varargin);
 p = inputParser;
 p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
 p.addParameter('destinationdir','',@ischar);
-p.addParameter('scenesubject','wandell/Graphics auto/scenes');
+% The json recipe will be here.  The rendering will be in this project
+% with a subject slot of 'rendering'
+p.addParameter('scenesubject','wandell/Graphics auto renderings/scenes');
 p.parse(varargin{:});
 
 st      = p.Results.scitran;
@@ -51,6 +53,7 @@ for tt = 1:length(obj.targets)
     sessionName = strsplit(sceneName,'_');
     sessionName = sessionName{1};
     
+    % This is where the rendering
     renderSubject = st.lookup('wandell/Graphics auto renderings/renderings');
     session = renderSubject.sessions.findOne(sprintf('label=%s',sessionName));
     try
@@ -85,9 +88,9 @@ for tt = 1:length(obj.targets)
     
     % Download scene recipe from Graphics assets project.
     destName_recipe = fullfile(destDir,[sceneName,'.json']);
-    acqRecipe =  st.lookup([sceneSubject,...
-                            '/', sessionName,...
-                            '/',sceneName]);
+    str = fullfile(sceneSubject,sessionName,sceneName);
+    acqRecipe = st.lookup(str);
+
 %     thisSession  =  sceneSubject.addSession('label', sessionName{1});
 %     GAssets = st.lookup('wandell/Graphics auto/scenes');
 %     sessionRecipe = thisSession.findOne('label=scenes_pbrt');
