@@ -361,7 +361,7 @@ classdef gCloud < handle
                     % build it ourselves from results
                     succeeded = [];
                     fprintf('\n----Active-------\n');
-                    fprintf(['ITEM','NAME',repmat(' ',1,42),'STATUS   START',repmat(' ',1,18),'\n']');
+                    fprintf(['ITEM','NAME',repmat(' ',1,42),'STATUS    START    AGE',repmat(' ',1,18),'\n']');
                     for ii=1:length(result.items)
                         try
                             if result.items(ii).status.succeeded
@@ -371,7 +371,17 @@ classdef gCloud < handle
                             fprintf('%d ',ii);
                             fprintf('%s ',result.items(ii).metadata.name);
                             fprintf('\t%d ',result.items(ii).status.active);
-                            fprintf('\t%s ',result.items(ii).status.startTime );
+                            pat = '(?<year>\d+)-(?<month>\d+)-(?<day>\d+)T(?<hour>\d+):(?<min>\d+):(?<sec>\d+)';
+                            startTime = regexp(result.items(ii).status.startTime,pat,'names');
+                            startTime.hour = str2double(startTime.hour)-7; % set for different timezone
+                            currentTime = clock;
+                            if (currentTime(4)-startTime.hour)==0
+                                age = currentTime(5)-startTime.min;
+                            else
+                                age = (currentTime(4)-startTime.hour)*60 - str2double(startTime.min) + currentTime(5);
+                            end
+                            fprintf('\t%d:%d:%d ', startTime.hour, str2double(startTime.min), str2double(startTime.sec));
+                            fprintf('\t%d mins ', age);
                             jobNames = [jobNames,' ',result.items(ii).metadata.name];
                         end
                     end
@@ -379,9 +389,12 @@ classdef gCloud < handle
                     
                     for ii=1:length(succeeded)
                         thisJob = succeeded(ii);
-                        fprintf('%d %s. Started at %s \n',...
+                        pat = '(?<year>\d+)-(?<month>\d+)-(?<day>\d+)T(?<hour>\d+):(?<min>\d+):(?<sec>\d+)';
+                        startTime = regexp(result.items(thisJob).status.startTime, pat,'names');
+                        startTime.hour = str2double(startTime.hour)-7;
+                        fprintf('%d %s. Started at %d:%d:%d \n',...
                         thisJob,result.items(thisJob).metadata.name,...
-                            result.items(thisJob).status.startTime);
+                            startTime.hour, str2double(startTime.min), str2double(startTime.sec));
                         jobNames = [jobNames,' ',result.items(thisJob).metadata.name];
                     end
                     fprintf('\n\n');
