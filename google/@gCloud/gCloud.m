@@ -374,9 +374,10 @@ classdef gCloud < handle
                             pat = '(?<year>\d+)-(?<month>\d+)-(?<day>\d+)T(?<hour>\d+):(?<min>\d+):(?<sec>\d+)';
                             startTime = regexp(result.items(ii).status.startTime,pat,'names');
                             startTime.hour = str2double(startTime.hour)-7; % set for different timezone
+                            if startTime.hour<0, startTime.hour = startTime.hour+24;end
                             currentTime = clock;
                             if (currentTime(4)-startTime.hour)==0
-                                age = currentTime(5)-startTime.min;
+                                age = currentTime(5)-str2double(startTime.min);
                             else
                                 age = (currentTime(4)-startTime.hour)*60 - str2double(startTime.min) + currentTime(5);
                             end
