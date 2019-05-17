@@ -82,8 +82,13 @@ p.parse(thisR,varargin{:});
 road          = p.Results.road;     % a struct representing the road
 st            = p.Results.scitran;  % @scitran object
 
-% Project lookup string
+% Project lookup string.  Get the project and its ID
 renderProjectLookup = p.Results.renderprojectlookup;
+
+% If this does not exist, the call fails.  Make your project.
+renderProject = st.lookup(renderProjectLookup);
+
+obj.fwAPI.projectID = renderProject.id;
 
 % Render subject name to use
 subjectName         = p.Results.subjectname;         
@@ -151,9 +156,10 @@ end
 
 %% Need to specify subject
 % We have to check whether the subject exists
+group       = st.lookup(renderProject.group);
 sessionName = strsplit(sceneName,'_');
 
-idS = st.containerCreate('Wandell Lab', 'Graphics auto renderings',...
+idS = st.containerCreate(group.label,renderProject.label,...
     'subject',subjectName,...
     'session',sessionName{1},...
     'acquisition',sceneName);
@@ -173,8 +179,7 @@ obj.fwAPI.sceneFilesID  = acqID;
 obj.fwAPI.key      = st.showToken;
 obj.fwAPI.InfoList = road.fwList;
 
-renderProject = st.lookup(renderProjectLookup);
-obj.fwAPI.projectID = renderProject.id;
+
 
 if ~isempty(acqID)
     fprintf('%s acquisition created \n', sceneName);
