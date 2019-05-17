@@ -19,8 +19,11 @@ function [acqID] = fwUploadPBRT(obj, thisR, varargin )
 %   thisR:  A render recipe.
 %
 % Optional key/value pairs
-%   road
-%   scitran
+%   render project lookup -  lookup string for the render project; must
+%         exist.  It will not be created.
+%   subject name - string
+%   road         - a struct describing the road 
+%   scitran      - @scitran object
 %
 % Returns
 %   sceneSession - The bucket where the files were copied
@@ -55,7 +58,7 @@ varargin = ieParamFormat(varargin);  % Allow spaces and capitalization
 
 p = inputParser;
 p.addRequired('recipe',@(x)(isa(x,'recipe')));
-p.addParameter('road',[]);
+p.addParameter('road',@(x)(isempty(x) || isstruct(x)));   % What type of object should this be?
 
 % users can specify the upload project using the following two parameters.
 % The first is the name of the project.  The scene is the subject type of
@@ -68,18 +71,23 @@ p.addParameter('road',[]);
 %       gcp.fw.subject - The type of object (scene, asset, rendering)
 %       gcp.fw.scitran - the scitran object
 %
-p.addParameter('renderproject','wandell/Graphics auto renderings');
-p.addParameter('scenesubject','wandell/Graphics auto renderings/scenes'); 
+p.addParameter('renderprojectlookup','wandell/Graphics auto renderings',@ischar);
+p.addParameter('subjectname','scenes',@ischar); 
 
 % flywheel 
 p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
 
 p.parse(thisR,varargin{:});
 
-road          = p.Results.road;
-st            = p.Results.scitran;       % flywheel
-renderProject = p.Results.renderproject;% where you asve your rendered data
-sceneSubject  = p.Results.scenesubject;
+road          = p.Results.road;     % a struct representing the road
+st            = p.Results.scitran;  % @scitran object
+
+% Project lookup string
+renderProjectLookup = p.Results.renderprojectlookup;
+
+% Render subject name to use
+subjectName         = p.Results.subjectname;         
+
 %% Write out the depth file, if required
 if(obj.renderDepth)
     
@@ -141,14 +149,17 @@ if ~exist(pbrtSceneFile,'file')
     error('Could not find pbrt scene file %s\n',pbrtSceneFile);
 end
 
-%% NEED to specify subject
+%% Need to specify subject
+% We have to check whether the subject exists
 sessionName = strsplit(sceneName,'_');
 
 idS = st.containerCreate('Wandell Lab', 'Graphics auto renderings',...
-    'subject','scenes',...
+    'subject',subjectName,...
     'session',sessionName{1},...
     'acquisition',sceneName);
 acqID = idS.acquisition;
+% For debugging
+% st.fw.deleteSession(idS.session);
 
 % thisSession  = sceneSubject.sessions.findOne(sprintf('label=%s',sessionName{1}));
 % if isempty(thisSession)
@@ -162,7 +173,7 @@ obj.fwAPI.sceneFilesID  = acqID;
 obj.fwAPI.key      = st.showToken;
 obj.fwAPI.InfoList = road.fwList;
 
-renderProject = st.lookup(renderProject);
+renderProject = st.lookup(renderProjectLookup);
 obj.fwAPI.projectID = renderProject.id;
 
 if ~isempty(acqID)
