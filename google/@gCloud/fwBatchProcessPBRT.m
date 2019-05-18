@@ -33,15 +33,22 @@ varargin = ieParamFormat(varargin);
 p = inputParser;
 p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
 p.addParameter('destinationdir','',@ischar);
-% The json recipe will be here.  The rendering will be in this project
-% with a subject slot of 'rendering'
-p.addParameter('scenesubject','wandell/Graphics auto renderings/scenes');
+
+% The json recipe will be here.  We need the render project and the subject
+% name. The rendering will be in the same project with a subject slot of
+% 'rendering'
+p.addParameter('renderprojectlookup','wandell/Graphics auto renderings',@ischar);
+p.addParameter('subjectname','scenes',@ischar); 
 p.parse(varargin{:});
 
 st      = p.Results.scitran;
 destDir = p.Results.destinationdir;
-sceneSubject = p.Results.scenesubject;
+subjectName = p.Results.subjectname;
 
+% Project lookup string.  Get the project and its ID
+renderProjectLookup = p.Results.renderprojectlookup;
+
+% Render subject name to use
 if isempty(st), st = scitran('stanfordlabs');end
 
 %% We return a file for each of the gcloud targets
@@ -54,7 +61,7 @@ for tt = 1:length(obj.targets)
     sessionName = sessionName{1};
     
     % This is where the rendering
-    renderSubject = st.lookup('wandell/Graphics auto renderings/renderings');
+    renderSubject = st.lookup([renderProjectLookup,'/renderings']);
     session = renderSubject.sessions.findOne(sprintf('label=%s',sessionName));
     try
         acq = session.acquisitions.findOne(sprintf('label=%s',sceneName));
@@ -88,8 +95,8 @@ for tt = 1:length(obj.targets)
     
     % Download scene recipe from Graphics assets project.
     destName_recipe = fullfile(destDir,[sceneName,'.json']);
-    str = fullfile(sceneSubject,sessionName,sceneName);
-    acqRecipe = st.lookup(str);
+    acqLookup = fullfile(renderProjectLookup,subjectName,sessionName,sceneName);
+    acqRecipe = st.lookup(acqLookup);
 
 %     thisSession  =  sceneSubject.addSession('label', sessionName{1});
 %     GAssets = st.lookup('wandell/Graphics auto/scenes');
