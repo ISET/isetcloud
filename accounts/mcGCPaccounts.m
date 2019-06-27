@@ -17,11 +17,11 @@ gcpconfig.projectid    = 'primal-surfer-140120';
 
 
 % These can be set, and here are the defaults
-gcpconfig.zone         = 'us-central1-b';    
+gcpconfig.zone         = 'us-west1-b';    
 % gcpconfig.instanceType = 'n1-highcpu-32';
-gcpconfig.instanceType = 'n1-standard-32';
+gcpconfig.instanceType = 'custom-50-56320';
 
-jsonName = fullfile(mcRootPath,'accounts','cloudRendering-pbrtv3-central-standard-32cpu-120m-flywheel.json');
+jsonName = fullfile(mcRootPath,'accounts','cloudRendering-pbrtv3-west1-custom-50-56320-flywheel.json');
 jsonwrite(jsonName,gcpconfig);
 
 %{

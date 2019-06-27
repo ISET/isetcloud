@@ -218,7 +218,7 @@ if(obj.renderDepth)
     pbrtDepthGeometryFile = fullfile(sceneFolder,sprintf('%s_depth_geometry.pbrt',sceneName));
     status          = st.fileUpload(pbrtDepthFile,acqID,'acquisition');
     status_geometry = st.fileUpload(pbrtDepthGeometryFile, acqID, 'acquisition');
-    if isempty(status) || isempty(status_geometry)
+    if isempty(status)|| isempty(status_geometry) 
         fprintf('%s uploaded \n',f_depth);
     else
         error('cp Depth scene file to flywheel failed\n');

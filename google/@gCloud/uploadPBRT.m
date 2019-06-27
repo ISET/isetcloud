@@ -112,7 +112,6 @@ if(obj.renderDepth)
     % Always overwrite the depth file, but don't copy over the whole
     % directory.
     piWrite(depthRecipe,...
-
         'overwritepbrtfile',true,...
         'overwritelensfile',false,...
         'overwriteresources',false,...
@@ -285,7 +284,7 @@ if(obj.renderDepth)
 end
 
 %% Copy mesh file
-if(obj.renderDepth)
+if(obj.renderMesh)
     
     f_mesh  = sprintf('%s_mesh.pbrt',f);
     pbrtMeshFile = fullfile(p,f_mesh);

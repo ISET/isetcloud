@@ -45,9 +45,9 @@ str = gcp.configList;
 % variable 'targets'.  We start out by emptying the list.
 gcp.targets =[];
 
-%% Set up the StopSign example
+%% Set up the scene
 
-fname = fullfile(piRootPath,'data','V3','StopSign','stop.pbrt');
+fname = fullfile(piRootPath,'data','V3','SimpleScene','SimpleScene.pbrt');
 thisR = piRead(fname,'version',3);  % Some warnings here.
 
 % Default is a relatively low resolution (256).
@@ -56,14 +56,14 @@ thisR.set('film resolution',256);
 thisR.set('rays per pixel',128);
 
 % Set up data for piWrite
-outputDir = fullfile(mcRootPath,'local','stop');
+outputDir = fullfile(mcRootPath,'local','SimpleScene');
 if ~exist(outputDir,'dir'), mkdir(outputDir); end
 
 [p,n,e] = fileparts(fname); 
 thisR.outputFile = fullfile(outputDir,sprintf('%s-%d%s',n,1,e));
 piWrite(thisR);
 
-% Upload based on the recipe
+%% Upload based on the recipe
 gcp.uploadPBRT(thisR);
 
 % This is always the first job

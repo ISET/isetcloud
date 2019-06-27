@@ -259,18 +259,21 @@ classdef gCloud < handle
             
             % Get information about the clusters from the gcloud container
             cmd = sprintf('gcloud container clusters list --format=json');
-            [~, result_clusters] = system(cmd);
-            result_clusters = jsondecode(result_clusters);
+            [~, result_clusters_old] = system(cmd);
+            result_clusters_old = jsondecode(result_clusters_old);
             
             % We only preserve some fields.  These we delete.
-            fields = {'addonsConfig','clusterIpv4Cidr','currentMasterVersion',...
-                'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
-                'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
-                'nodeIpv4CidrSize','nodePools','selfLink','servicesIpv4Cidr','masterAuth',...
-                'nodeConfig','locations','subnetwork','networkConfig','location','defaultMaxPodsConstraint'};
-            result_clusters = rmfield(result_clusters,fields);
-            result_clusters = orderfields(result_clusters, ...
-                {'name', 'zone', 'status','createTime','currentNodeCount'});
+%             fields = {'addonsConfig','clusterIpv4Cidr','currentMasterVersion',...
+%                 'currentNodeVersion','endpoint','initialClusterVersion','instanceGroupUrls',...
+%                 'labelFingerprint','legacyAbac','loggingService','monitoringService','network',...
+%                 'ipAllocationPolicy','nodePools','selfLink','servicesIpv4Cidr','masterAuth',...
+%                 'nodeConfig','locations','subnetwork','networkConfig','location','defaultMaxPodsConstraint'};
+            fields = {'name', 'zone', 'status','createTime','currentNodeCount'};
+            for ii = 1:length(fields)
+                result_clusters.(fields{ii}) = result_clusters_old.(fields{ii});
+            end
+%             result_clusters = orderfields(result_clusters, ...
+%                 {'name', 'zone', 'status','createTime','currentNodeCount'});
             
             % We only want the cluster associated with this GCP name
             idx = strcmp(name,{result_clusters(:).name});
@@ -361,7 +364,7 @@ classdef gCloud < handle
                     % build it ourselves from results
                     succeeded = [];
                     fprintf('\n----Active-------\n');
-                    fprintf(['ITEM','NAME',repmat(' ',1,42),'STATUS    START    AGE',repmat(' ',1,18),'\n']');
+                    fprintf(['ITEM','NAME',repmat(' ',1,40),'STATUS    START',repmat(' ',1,10),'AGE','\n']');
                     for ii=1:length(result.items)
                         try
                             if result.items(ii).status.succeeded

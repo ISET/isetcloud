@@ -70,12 +70,17 @@ target.camera  = thisR.camera;
 % target.sceneInfo = sceneInfo;
 target.local   = pbrtScene;
 
-% target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
-target.remote = obj.fwAPI.projectID;
-target.fwAPI = obj.fwAPI;
-if ~isempty(road)
-    target.fwList = road.fwList;
+if isprop(obj, 'fwAPI')
+    target.remote = obj.fwAPI.projectID;
+    target.fwAPI = obj.fwAPI;
+    if ~isempty(road)
+        target.fwList = road.fwList;
+    end
+else
+    target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
 end
+
+
 
 % Indicate if this target is a depth map or not. This is used to sort
 % returned targets when downloading.
