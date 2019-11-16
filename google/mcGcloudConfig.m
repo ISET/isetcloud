@@ -1,8 +1,17 @@
 function mcGcloudConfig
-% Configure the Matlab kubernetes and gsutil functions
+% Configure the Matlab PATH for the kubernetes and gsutil functions
 %
+% Syntax
+%   mcGcloudConfig
+%
+% Description
+%   Tries to figure out the paths to kubectl and gsutil and make sure
+%   these are on the user's path
 %
 % ZL Vistasoft Team, 2018
+%
+% See also
+%
 
 %% Configure Matlab ENV for google SDK 
 
@@ -50,8 +59,21 @@ end
 gcloudPath = fullfile(fileparts(kubePath),'path.bash.inc');
 cmd = sprintf('source %s',gcloudPath);
 status = system(cmd);
-if status, error('Failed to run path.bash.inc'); end
+if status
+    warning('Failed to run path.bash.inc at %s',kubePath);
+    gcloudPath = '/usr/local/bin/google-cloud-sdk';
+    cmd = sprintf('source %s',fullfile(gcloudPath,'path.bash.inc'));
+    status = system(cmd);
+    if status
+        error('Could not find path.bash.inc anywhere.');
+    end
+    
+    % Add the gcloudPath
+    gcloudPath = fullfile(gcloudPath,'bin');
+    setenv('PATH', [gcloudPath,':',initPath]);
+end
 
+%%
 [status, gsutilPath] = system('which gsutil');
 if status, error('Failed to find gsutil'); end
 fprintf('Found gsutil at %s\n',gsutilPath(1:(end-1))');
