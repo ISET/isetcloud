@@ -2,50 +2,46 @@ function [acqID] = fwUploadPBRT(obj, thisR, varargin )
 % Upload a pbrt scene directory to flywheel for rendering on the cluster
 %
 % Syntax
-%   [sceneSession,current_id] = gcp.fwUploadPBRT(thisR, ...)
+%   acqID = gcp.fwUploadPBRT(thisR, ...)
 %
 % Description:
 %   The piWrite function places a number of files in the rendering
 %   directory.  These include the scene, geometry, material, and lens file
 %   and texture files. The scene, geometry, and material files are.
 %   fundamental. We call the other files (textures, lens, spds, ...other)
-%   resources. 
+%   cgresources. 
 %
 %   This function collects the resources into a single zip file.  It then
 %   uploads the scene, geometry, materials and zipped resources to the
 %   gcloud bucket.
 %
 % Input
+%   obj:    A gCloud object
 %   thisR:  A render recipe.
 %
 % Optional key/value pairs
 %   render project lookup -  lookup string for the render project; must
-%         exist.  It will not be created.
-%   subject name - string
-%   road         - a struct describing the road 
-%   scitran      - @scitran object
+%     exist.  It will not be created.  By default the project is 
+%            'Graphics auto renderings'
+%   subject name     - string (default:  'scenes')
+%   session name     - 
+%   acquisition name -
+%   road         - a struct describing the road (no default)
+%   scitran      - @scitran object (empty default)
 %
 % Returns
-%   sceneSession - The bucket where the files were copied
-%   current_id   - ID of the acquisition created for the upload.
+%   acqID -  The Flywheel acquisition where the scene is stored
 %
 % Descriptions
 %  Using the information in the render recipe (thisR), we find and zip
 %  the resource files.  The zip file is placed inside the data
 %  directory.
 %
-%  The 'target' field of the gcp object is modified to specify the
+% Dependencies:  ISET3d
 %
-% See examples in source code
-%
-% See also: s_gCloud
-%
-% Zhenyi Liu,  Vistasoft
+% Zhenyi Liu,  Vistalab
 % 
-% See also:
-%   
-
-% For the examples, we assume gcp is initialized
+% See also: s_gCloud, t_piRenderFW_cloud, t_piSceneAutoGeneration
 %
 
 % Examples:
@@ -66,13 +62,16 @@ p.addParameter('road',@(x)(isempty(x) || isstruct(x)));   % What type of object 
 % and the output (rendering)
 %
 % To consider:
-%    We might attach these parameters to the gcp as slots such as
+%    We might attach these parameters to the gcp as slots.  Other
+%    information is attached below (line 172)
 %       gcp.fw.project - The project (e.g., 'Graphics auto renderings')
 %       gcp.fw.subject - The type of object (scene, asset, rendering)
 %       gcp.fw.scitran - the scitran object
 %
 p.addParameter('renderprojectlookup','wandell/Graphics auto renderings',@ischar);
 p.addParameter('subjectname','scenes',@ischar); 
+p.addParameter('sessionname','',@ischar);
+p.addParameter('acquisitionname','',@ischar);
 
 % flywheel 
 p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
@@ -91,7 +90,9 @@ renderProject = st.lookup(renderProjectLookup);
 obj.fwAPI.projectID = renderProject.id;
 
 % Render subject name to use
-subjectName         = p.Results.subjectname;         
+subjectName  = p.Results.subjectname;         
+sessionName  = p.Results.sessionname;
+acquisitionName = p.Results.acquisitionname; 
 
 %% Write out the depth file, if required
 if(obj.renderDepth)
@@ -155,15 +156,26 @@ if ~exist(pbrtSceneFile,'file')
 end
 
 %% Need to specify subject
+
 % We have to check whether the subject exists
 group       = st.lookup(renderProject.group);
-sessionName = strsplit(sceneName,'_');
 
+if isempty(sessionName)
+    tmp = strsplit(sceneName,'_');
+    sessionName = tmp{1};
+end
+if isempty(acquisitionName)
+    acquisitionName = sceneName;
+end
+
+% We create the acquisition container
+% 
 idS = st.containerCreate(group.label,renderProject.label,...
     'subject',subjectName,...
-    'session',sessionName{1},...
-    'acquisition',sceneName);
+    'session',sessionName,...
+    'acquisition',acquisitionName);
 acqID = idS.acquisition;
+
 % For debugging
 % st.fw.deleteSession(idS.session);
 
@@ -179,19 +191,18 @@ obj.fwAPI.sceneFilesID  = acqID;
 obj.fwAPI.key      = st.showToken;
 obj.fwAPI.InfoList = road.fwList;
 
-
-
 if ~isempty(acqID)
     fprintf('%s acquisition created \n', sceneName);
 end
-%% Start the upload
+%% Start the upload to the specified acquisition
+
 status= st.fileUpload(pbrtSceneFile,acqID,'acquisition');
 if isempty(status)
     fprintf('%s.pbrt uploaded \n', sceneName);
 else
     error('Upload of scene file to Flywheel failed\n');
 end
-%% Copy  material files
+%% Copy  material files to that acquisition
  
 pbrtMaterialFile = fullfile(sceneFolder, sprintf('%s_materials.pbrt', sceneName));
 
@@ -201,7 +212,7 @@ if  isempty(status)
 else
     error('cp scene materials file to flywheel failed\n');
 end
-%% Copy  geometry files
+%% Copy  geometry files to the acquisition
 
 pbrtGeometryFile = fullfile(sceneFolder,sprintf('%s_geometry.pbrt',sceneName));
 
@@ -252,7 +263,9 @@ if(obj.renderPointCloud)
         error('cp PointCloud scene file to flywheel failed\n');
     end
 end
-%% piGeometryRead creates a json file of current recipe, upload recipe.
+%% Upload the recipe JSON file
+% This file contains all of the cgresource information needed to
+% create the scene
 
 recipeJson     = sprintf('%s.json', sceneName);
 pbrtRecipeJson = fullfile(sceneFolder, recipeJson);
@@ -263,8 +276,10 @@ else
     error('cp recipeJson of scene file to flywheel failed\n');
 end
 
-%% save and upload gcp.target json file
+%% Save and upload <name>_target.json file
 
+% This file contains the IDs needed to recreate the scene using the
+% data in Flywheel
 target.camera    = thisR.camera;
 target.local     = thisR.outputFile;
 target.remote    = obj.fwAPI.projectID;
