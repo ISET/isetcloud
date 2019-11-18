@@ -1,8 +1,8 @@
-function [acqID] = fwUploadPBRT(obj, thisR, varargin )
+function [acqID,names] = fwUploadPBRT(obj, thisR, varargin )
 % Upload a pbrt scene directory to flywheel for rendering on the cluster
 %
 % Syntax
-%   acqID = gcp.fwUploadPBRT(thisR, ...)
+%   [acqID,names] = gcp.fwUploadPBRT(thisR, ...)
 %
 % Description:
 %   The piWrite function places a number of files in the rendering
@@ -31,6 +31,7 @@ function [acqID] = fwUploadPBRT(obj, thisR, varargin )
 %
 % Returns
 %   acqID -  The Flywheel acquisition where the scene is stored
+%   names -  Struct with the subject, session and acquisiton names
 %
 % Descriptions
 %  Using the information in the render recipe (thisR), we find and zip
@@ -93,6 +94,13 @@ obj.fwAPI.projectID = renderProject.id;
 subjectName  = p.Results.subjectname;         
 sessionName  = p.Results.sessionname;
 acquisitionName = p.Results.acquisitionname; 
+
+% Return these if the user wants
+if nargout > 1
+    names.subject = subjectName;
+    names.session = sessionName;
+    names.acquisition = acquisitionName;
+end
 
 %% Write out the depth file, if required
 if(obj.renderDepth)
