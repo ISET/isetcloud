@@ -130,7 +130,9 @@ classdef gCloud < handle
                 
                 obj.dockerAccount = thisAccount.dockerAccount;
                 obj.projectid    = thisAccount.projectid;
-                obj.dockerImage  = thisAccount.dockerImage;
+                if isempty(p.Results.dockerimage)
+                    obj.dockerImage  = thisAccount.dockerImage;
+                end
                 obj.clusterName  = [thisAccount.clusterName,'-',obj.namespace];
                 obj.cloudBucket  = thisAccount.cloudBucket;
                 obj.zone         = thisAccount.zone;
