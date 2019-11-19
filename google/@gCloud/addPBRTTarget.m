@@ -39,11 +39,14 @@ p.addRequired('thisR',@(x)(isa(x,'recipe')));
 
 p.addParameter('road',[]);
 p.addParameter('replace',[],@(x)(x >= 1 && x <= (length(obj.targets)+1)));
+p.addParameter('subjectlabel','renderings',@ischar);
 
 p.parse(obj,thisR,varargin{:});
 
-replace = round(p.Results.replace);
-road    = p.Results.road;
+replace      = round(p.Results.replace);
+road         = p.Results.road;
+subjectLabel = p.Results.subjectlabel;
+
 %% Act
 
 % When we loop and create various versions of the PBRT scene file, we
@@ -71,19 +74,24 @@ target.camera  = thisR.camera;
 target.local   = pbrtScene;
 
 if isprop(obj, 'fwAPI')
+    % If this slot exists, we are working with Flywheel storage
+    % So we add this information.
     target.remote = obj.fwAPI.projectID;
     target.fwAPI = obj.fwAPI;
     if ~isempty(road)
         target.fwList = road.fwList;
     end
+    % The output for the job will have its own subject label.  The
+    % inputs are usually scene or camera array.  The output is
+    % 'renderings' by default.
+    target.fwAPI.subjectLabel = subjectLabel;
 else
     target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
 end
 
+%% Indicate if this target is a depth map or not
 
-
-% Indicate if this target is a depth map or not. This is used to sort
-% returned targets when downloading.
+% This is used to sort returned targets when downloading.
 target.depthFlag = obj.renderDepth;
 target.meshFlag  = obj.renderMesh;
 

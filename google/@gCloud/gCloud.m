@@ -302,6 +302,8 @@ classdef gCloud < handle
             disp('*************Cluster Information*************');
             disp(result_clusters);
             
+            fprintf('*************END*************\n');
+            
             % Configure result
             result.configuration = result_configuration;
             result.clusters = result_clusters;

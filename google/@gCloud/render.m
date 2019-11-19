@@ -14,6 +14,34 @@ function [ obj ] = render( obj, varargin )
 % See also:  
 %
 
+% These are the arguments to fwRender.sh that executes in the PBRT
+% docker container tagged flywheel-dev.  If you do not set
+%
+%    Subject Label, it will default to 'renderings'.  
+%    Acquisition label it will default to the scene name
+%    Session label it will default to the first string before the
+%       first underscore in the sceneName.
+%{
+
+# Positional Arguments
+# 1 - API_KEY
+# 2 - Input acquisition ID (we download all files in that acquisition)
+# 3 - String containing the acquisition IDs and filenames
+# 4 - Output project ID in Flywheel in which to place the outputs.
+# 5 - Session Label - this will be the label used for the Session in FLYWHEEL
+# 6 - Acquisition label - this will the label used for the acquisition in FLYWHEEL
+# 7 - Subject Label - this will be used to set the subject label/code in FLYWHEEL
+
+# Example usage:
+#    fwrender.sh <API_KEY> \
+#                5dd319a5fd5f730040fe7f8b \
+#                '5dd319a5fd5f730040fe7f8b city4_9:30_v0.0_f40.00front_o270_materials.pbrt' \
+#                5c2df7a933cc940062d70d6c \
+#                city4_9:30_v0.0_f40.00front_o270 \
+#                city4 \
+#                renderings
+
+%}
 %%
 p = inputParser;
 p.addParameter('replaceJob',false,@isnumeric);
@@ -60,14 +88,16 @@ for t=1:nTargets
         nCores = str2double(obj.instanceType(loc(1)+1:loc(1)+2));
     end
     
-    % The kubectl command invokes a script (fwrender.m) that copies all the
-    % render resources from flywheel to the kubernetes instance we
-    % initiated.  It then invokes the PBRT docker image.
+    % The kubectl command invokes a script (fwrender.sh) that copies
+    % all the render resources from flywheel to the kubernetes
+    % instance we initiated.  It then invokes the PBRT docker image.
     %
     % We use all the allocated cores.  The 1000 scale factor is how the GCP
     % people describe the units of the CPU.
+    %
+    % See above for the order of the arguments and explanation.
     if isfield(obj.targets(t), 'fwAPI')
-        kubeCmd = sprintf('kubectl run %s --image=%s --namespace=%s --restart=OnFailure --limits cpu=%im  -- ../code/fwrender.sh  "%s" "%s" "%s" "%s" ',...
+        kubeCmd = sprintf('kubectl run %s --image=%s --namespace=%s --restart=OnFailure --limits cpu=%im  -- ../code/fwrender.sh  "%s" "%s" "%s" "%s" "%s" "%s" "%s" ',...
             jobName,...
             obj.dockerImage,...
             obj.namespace,...
@@ -75,7 +105,10 @@ for t=1:nTargets
             obj.targets(t).fwAPI.key,...
             obj.targets(t).fwAPI.sceneFilesID,...
             obj.targets(t).fwAPI.InfoList,...
-            obj.targets(t).fwAPI.projectID);
+            obj.targets(t).fwAPI.projectID,...
+            obj.targets(t).fwAPI.sessionLabel, ...
+            obj.targets(t).fwAPI.acquisitionLabel,...
+            obj.targets(t).fwAPI.subjectLabel);
     else
         kubeCmd = sprintf('kubectl run %s --image=%s --namespace=%s --restart=OnFailure --limits cpu=%im  -- ./cloudRenderPBRT2ISET.sh  "%s" ',...
             jobName,...

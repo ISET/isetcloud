@@ -1,10 +1,12 @@
-function [acqID,names] = fwUploadPBRT(obj, thisR, varargin )
+function acqID = fwUploadPBRT(obj, thisR, varargin )
 % Upload a pbrt scene directory to flywheel for rendering on the cluster
 %
 % Syntax
-%   [acqID,names] = gcp.fwUploadPBRT(thisR, ...)
+%   acqID = gcp.fwUploadPBRT(thisR, ...)
 %
 % Description:
+%   (Re-Write)
+%
 %   The piWrite function places a number of files in the rendering
 %   directory.  These include the scene, geometry, material, and lens file
 %   and texture files. The scene, geometry, and material files are.
@@ -23,15 +25,14 @@ function [acqID,names] = fwUploadPBRT(obj, thisR, varargin )
 %   render project lookup -  lookup string for the render project; must
 %     exist.  It will not be created.  By default the project is 
 %            'Graphics auto renderings'
-%   subject name     - string (default:  'scenes')
-%   session name     - 
-%   acquisition name -
+%   subject label     - string (default:  'scenes')
+%   session label     - 
+%   acquisition label -
 %   road         - a struct describing the road (no default)
 %   scitran      - @scitran object (empty default)
 %
 % Returns
 %   acqID -  The Flywheel acquisition where the scene is stored
-%   names -  Struct with the subject, session and acquisiton names
 %
 % Descriptions
 %  Using the information in the render recipe (thisR), we find and zip
@@ -62,17 +63,10 @@ p.addParameter('road',@(x)(isempty(x) || isstruct(x)));   % What type of object 
 % the project.  We use the subject field to distinguish the input (scene)
 % and the output (rendering)
 %
-% To consider:
-%    We might attach these parameters to the gcp as slots.  Other
-%    information is attached below (line 172)
-%       gcp.fw.project - The project (e.g., 'Graphics auto renderings')
-%       gcp.fw.subject - The type of object (scene, asset, rendering)
-%       gcp.fw.scitran - the scitran object
-%
 p.addParameter('renderprojectlookup','wandell/Graphics auto renderings',@ischar);
-p.addParameter('subjectname','scenes',@ischar); 
-p.addParameter('sessionname','',@ischar);
-p.addParameter('acquisitionname','',@ischar);
+p.addParameter('subjectlabel','scenes',@ischar); 
+p.addParameter('sessionlabel','',@ischar);
+p.addParameter('acquisitionlabel','',@ischar);
 
 % flywheel 
 p.addParameter('scitran',[],@(x)(isa(x,'scitran')));
@@ -91,16 +85,13 @@ renderProject = st.lookup(renderProjectLookup);
 obj.fwAPI.projectID = renderProject.id;
 
 % Render subject name to use
-subjectName  = p.Results.subjectname;         
-sessionName  = p.Results.sessionname;
-acquisitionName = p.Results.acquisitionname; 
+subjectLabel  = p.Results.subjectlabel;         
+sessionLabel  = p.Results.sessionlabel;
+acquisitionLabel = p.Results.acquisitionlabel; 
 
-% Return these if the user wants
-if nargout > 1
-    names.subject = subjectName;
-    names.session = sessionName;
-    names.acquisition = acquisitionName;
-end
+obj.fwAPI.subjectLabel = subjectLabel;
+obj.fwAPI.sessionLabel = sessionLabel;
+obj.fwAPI.acquisitionLabel = acquisitionLabel;
 
 %% Write out the depth file, if required
 if(obj.renderDepth)
@@ -168,20 +159,20 @@ end
 % We have to check whether the subject exists
 group       = st.lookup(renderProject.group);
 
-if isempty(sessionName)
+if isempty(sessionLabel)
     tmp = strsplit(sceneName,'_');
-    sessionName = tmp{1};
+    sessionLabel = tmp{1};
 end
-if isempty(acquisitionName)
-    acquisitionName = sceneName;
+if isempty(acquisitionLabel)
+    acquisitionLabel = sceneName;
 end
 
 % We create the acquisition container
 % 
 idS = st.containerCreate(group.label,renderProject.label,...
-    'subject',subjectName,...
-    'session',sessionName,...
-    'acquisition',acquisitionName);
+    'subject',subjectLabel,...
+    'session',sessionLabel,...
+    'acquisition',acquisitionLabel);
 acqID = idS.acquisition;
 
 % For debugging
