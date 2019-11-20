@@ -33,6 +33,8 @@ function target = addPBRTTarget(obj, thisR,varargin)
 
 %% Parse
 
+varargin = ieParamFormat(varargin);
+
 p = inputParser;
 p.addRequired('obj',@(x)(isa(x,'gCloud')));
 p.addRequired('thisR',@(x)(isa(x,'recipe')));
