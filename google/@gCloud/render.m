@@ -45,13 +45,16 @@ function [ obj ] = render( obj, varargin )
 %%
 p = inputParser;
 p.addParameter('replaceJob',false,@isnumeric);
+p.addParameter('renderList',1:length(obj.targets),@isnumeric);
 p.parse(varargin{:});
 replaceJob = p.Results.replaceJob;
+renderList = p.Results.renderList;
 %% Each rendering job is called a target
-nTargets = length(obj.targets);
+nTargets = length(renderList);
 fprintf('Starting %d jobs\n',nTargets);
 
-for t=1:nTargets
+for i=1:length(renderList)
+    t = renderList(i);
     [~,jobName] = fileparts(obj.targets(t).local);
     jobName(jobName == '_' | jobName == '.' | jobName == '-' | jobName == '/' | jobName == ':') = '';
     jobName=lower(jobName);
