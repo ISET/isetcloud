@@ -56,7 +56,7 @@ varargin = ieParamFormat(varargin);  % Allow spaces and capitalization
 
 p = inputParser;
 p.addRequired('recipe',@(x)(isa(x,'recipe')));
-p.addParameter('road',@(x)(isempty(x) || isstruct(x)));   % What type of object should this be?
+p.addParameter('road',[],@(x)(isempty(x) || isstruct(x)));   % What type of object should this be?
 
 % users can specify the upload project using the following two parameters.
 % The first is the name of the project.  The scene is the subject type of
@@ -188,7 +188,11 @@ acqID = idS.acquisition;
 % Assign Flywheel information to gCloud object
 obj.fwAPI.sceneFilesID  = acqID;
 obj.fwAPI.key      = st.showToken;
-obj.fwAPI.InfoList = road.fwList;
+if ~isempty(road)
+    obj.fwAPI.InfoList = road.fwList;
+else
+    obj.fwAPI.InfoList = [];
+end
 
 if ~isempty(acqID)
     fprintf('%s acquisition created \n', sceneName);
