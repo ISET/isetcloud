@@ -69,7 +69,7 @@ classdef gCloud < handle
         % sceneEye object to the gCloud object so that each target will have
         % a corresponding sceneEye object. 
         miscDescriptor = [];
-        bypass   = false;
+        bypass   = false; % for test without starting a k8s
         targets;    
         
     end
@@ -138,7 +138,7 @@ classdef gCloud < handle
                 obj.zone         = thisAccount.zone;
                 obj.instanceType = thisAccount.instanceType;
             end
-            
+%             obj.bypass = true;
             % Go for it
             if ~obj.bypass
                 obj.init();

@@ -1,1 +1,1 @@
-{"dockerAccount":"vistalab","dockerImage":"gcr.io/primal-surfer-140120/pbrt-v3-spectral-flywheel","cloudBucket":"gs://primal-surfer-140120.appspot.com","clusterName":"cloudrendering","projectid":"primal-surfer-140120","zone":"us-west1-b","instanceType":"custom-50-56320"}
+{"dockerAccount":"vistalab","dockerImage":"gcr.io/primal-surfer-140120/pbrt-v3-spectral-flywheel-dev-zhenyi","cloudBucket":"gs://primal-surfer-140120.appspot.com","clusterName":"cloudrendering","projectid":"primal-surfer-140120","zone":"us-west1-b","instanceType":"custom-50-56320"}

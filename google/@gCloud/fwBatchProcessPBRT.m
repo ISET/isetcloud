@@ -37,7 +37,7 @@ p.addParameter('destinationdir','',@ischar);
 % The json recipe will be here.  We need the render project and the subject
 % name. The rendering will be in the same project with a subject slot of
 % 'rendering'
-p.addParameter('renderprojectlookup','wandell/Graphics auto renderings',@ischar);
+p.addParameter('renderprojectlookup','wandell/ISETAutoEval20200108',@ischar);
 p.addParameter('subjectname','scenes',@ischar); 
 p.parse(varargin{:});
 
@@ -80,8 +80,7 @@ for tt = 1:length(obj.targets)
     if ~exist(destName_irradiance,'file')
         try
             % Try to download it
-            thisFile  = acq.getFile([sceneName,'.dat']); 
-            thisFile.download(destName_irradiance);
+            acq.downloadFile([sceneName,'.dat'], destName_irradiance);
             fprintf('%s downloaded. \n',[sceneName,'.dat']);
         catch
             % Can not find it

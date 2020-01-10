@@ -1,0 +1,49 @@
+# PBRT file created with piWrite on 2020/1/9 21:37:16.43 
+# PBRT version = 3 
+
+ActiveTransform StartTime 
+Translate 0 0 0 
+Rotate 0.000000 0.000000 0.000000 1.000000 
+Rotate 45.040000 0.000000 1.000000 0.000000 
+Rotate 0.000000 1.000000 0.000000 0.000000 
+ActiveTransform EndTime 
+Translate -4.53 0.00 -4.53 
+Rotate 0.000000 0.000000 0.000000 1.000000 
+Rotate 45.040000 0.000000 1.000000 0.000000 
+Rotate 0.000000 1.000000 0.000000 0.000000 
+ActiveTransform All 
+LookAt 54.708819 1.556550 128.860000 77.740709 1.556550 148.083217 0.000000 1.000000 0.000000 
+
+# camera 
+Camera "perspective" 
+  "float fov" [45.000000] 
+  "float focaldistance" [2000.000000] 
+  "float lensradius" [0.000000] 
+  "float shutteropen" [0.000000] 
+  "float shutterclose" [0.016667] 
+
+# sampler 
+Sampler "sobol" 
+  "integer pixelsamples" [64] 
+
+# film 
+Film "image" 
+  "integer xresolution" [1280] 
+  "integer yresolution" [720] 
+  "float diagonal" [10.000000] 
+
+# integrator 
+Integrator "bdpt" 
+  "integer maxdepth" [10] 
+  "string strategy" "all" 
+
+WorldBegin 
+AttributeBegin 
+Rotate 66 0 1 0 
+Rotate -90 1 0 0 
+Scale 1 1 1 
+LightSource "infinite" "string mapname" "12-09_Clear.exr" 
+AttributeEnd 
+Include "city3_12_00_hdr_pinhole_realisticMat_motion_202019213716_materials.pbrt" 
+Include "city3_12_00_hdr_pinhole_realisticMat_motion_202019213716_geometry.pbrt" 
+WorldEnd 

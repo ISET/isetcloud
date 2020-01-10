@@ -1,4 +1,4 @@
-function [sceneSession,current_id] = fwUploadPBRT_local(obj, thisR, varargin )
+function [ids] = fwUploadPBRT_local(obj, thisR, varargin )
 % Copy a pbrt scene directory to FORUPLOAD foder, then flywheel CLI is used
 % to import files to flywheel.
 %
@@ -137,8 +137,8 @@ if ~exist(pbrtSceneFile,'file')
     error('Could not find pbrt scene file %s\n',pbrtSceneFile);
 end
 
-%
-hierarchy = st.projectHierarchy('Renderings');
+%{
+hierarchy = st.projectHierarchy('ISETAutoEval20200108');
 sessions = hierarchy.sessions;
 
 for ii=1:length(sessions)
@@ -147,21 +147,36 @@ for ii=1:length(sessions)
         break;
     end
 end
+%}
 % create an acquisition
-current_id = st.containerCreate('Wandell Lab', 'Renderings',...
-    'session','scenes_pbrt','acquisition',sceneName);
-% Assign flywheel information to gcp
-obj.fwAPI.sceneFilesID  = current_id;
-obj.fwAPI.key = st.showToken;
-obj.fwAPI.InfoList = road.fwList;
-fwproject = st.search('project','project label exact','Renderings');
-obj.fwAPI.projectID = fwproject{1}.project.id;
+sessionName = strsplit(sceneName, '_');
+sessionName = sessionName{1};
+projectName = 'ISETAutoEval20200108';
+ids = st.containerCreate('Wandell Lab', projectName,...
+    'subject','scenes',...
+    'session',sessionName,...
+    'acquisition',sceneName);
+% return values current_id:
+%         project: 'xxxxx'
+%         subject: 'xxxxx'
+%         session: 'xxxxx'
+%     acquisition: 'xxxxx'
 
-if ~isempty(current_id.acquisition)
+% Assign flywheel information to gcp
+obj.fwAPI.sceneFilesID  = ids.acquisition;
+obj.fwAPI.key = st.showToken;
+road.fwList = strrep(road.fwList,'  ',' ');
+obj.fwAPI.InfoList = road.fwList;
+% fwproject = st.search('project','project label exact',projectName);
+obj.fwAPI.projectID = ids.project;
+obj.fwAPI.sessionLabel = sessionName;
+obj.fwAPI.acquisitionLabel = sceneName;
+
+if ~isempty(ids.acquisition)
     fprintf('%s acquisition created \n',sceneName);
 end
 %% Create a local folder
-fwLocalDir = fullfile(piRootPath,'local','FORUPLOAD','wandell', 'Renderings','pbrt','scenes_pbrt',sprintf('%s',sceneName));
+fwLocalDir = fullfile(piRootPath,'local','FORUPLOAD','wandell', projectName,'scenes',sessionName, sceneName);
 if ~exist(fwLocalDir,'dir'), mkdir(fwLocalDir);end
 %% Copy scene file
 
@@ -203,7 +218,7 @@ if(obj.renderDepth)
 end
 
 %% Copy mesh file
-if(obj.renderDepth)
+if(obj.renderMesh)
     
     f_mesh  = sprintf('%s_mesh.pbrt',sceneName);
     pbrtMeshFile = fullfile(sceneFolder,f_mesh);
@@ -229,6 +244,40 @@ jsonwrite(pbrtRecipeJson,thisR);
 status= copyfile(pbrtRecipeJson,fwLocalDir);
 if  status
     fprintf('%s copied \n',recepeJson);
+else
+    error('cp recipeJson of scene file to flywheel failed\n');
+end
+
+%% Save Rendering command as a bash script
+if piContains(obj.instanceType, 'n1')
+    loc = strfind(obj.instanceType,'-');
+    nCores = str2double(obj.instanceType(loc(2)+1:end));
+elseif piContains(obj.instanceType, 'custom')
+    loc = strfind(obj.instanceType,'-');
+    nCores = str2double(obj.instanceType(loc(1)+1:loc(1)+2));
+end
+kubeCmd = sprintf('kubectl run %s --image=%s --namespace=%s --restart=OnFailure --limits cpu=%im --generator=run-pod/v1  -- ../code/fwrender.sh  "%s" "%s" "%s" "%s" "%s" "%s" "%s" ',...
+    jobName,...
+    obj.dockerImage,...
+    obj.namespace,...
+    (nCores-0.9)*1000,...
+    obj.targets(t).fwAPI.key,...
+    obj.targets(t).fwAPI.sceneFilesID,...
+    obj.targets(t).fwAPI.InfoList,...
+    obj.targets(t).fwAPI.projectID,...
+    obj.targets(t).fwAPI.sessionLabel, ...
+    obj.targets(t).fwAPI.acquisitionLabel,...
+    obj.targets(t).fwAPI.subjectLabel);
+
+fname_bash = sprintf('%s.sh',sceneName);
+fname_bashPth = fullfile(sceneFolder,fname_bash);
+shell_fid = fopen(fname_bashPth,'wt');
+fprintf(shell_fid, kubeCmd);
+fclose(shell_fild);
+
+status= copyfile(fname_bashPth,fwLocalDir);
+if  status
+    fprintf('%s copied \n',fname_bash);
 else
     error('cp recipeJson of scene file to flywheel failed\n');
 end
