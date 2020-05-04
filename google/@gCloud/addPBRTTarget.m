@@ -37,8 +37,8 @@ varargin = ieParamFormat(varargin);
 
 p = inputParser;
 p.addRequired('obj',@(x)(isa(x,'gCloud')));
-p.addRequired('thisR',@(x)(isa(x,'recipe')));
-
+p.addRequired('thisR',@(x)(isa(x,'recipe') || exist(thisR,'file')));
+% p.addParameter('fname',@(x)(exist(fname,'file')));
 p.addParameter('road',[]);
 p.addParameter('replace',[],@(x)(x >= 1 && x <= (length(obj.targets)+1)));
 p.addParameter('subjectlabel','renderings',@ischar);
@@ -49,62 +49,69 @@ replace      = round(p.Results.replace);
 road         = p.Results.road;
 subjectLabel = p.Results.subjectlabel;
 
-%% Act
-
-% When we loop and create various versions of the PBRT scene file, we
-% put all the versions into the same remote directory.  So we set up
-% the cloud folder on the input.
-% pbrtScene = thisR.get('input file');
-
-% -----Zhenyi 
-% if ~exist(pbrtScene,'file'), error('PBRT scene not found %s\n',pbrtScene);
-% else,                       [~, sceneName] = fileparts(pbrtScene);
-% end
-
-% [~, sceneName] = fileparts(pbrtScene);
-% 
-% cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
-
-% The output pbrt scene file is based on the output file, and this can
-% change.
-pbrtScene = thisR.get('output file');
-
-% [~, sceneName] = fileparts(pbrtScene);
-target.camera  = thisR.camera;
-
-% target.sceneInfo = sceneInfo;
-target.local   = pbrtScene;
-
-if isprop(obj, 'fwAPI')
-    % If this slot exists, we are working with Flywheel storage
-    % So we add this information.
-    target.remote = obj.fwAPI.projectID;
-    target.fwAPI = obj.fwAPI;
-    if ~isempty(road)
-        target.fwList = road.fwList;
-    end
-    % The output for the job will have its own subject label.  The
-    % inputs are usually scene or camera array.  The output is
-    % 'renderings' by default.
-    target.fwAPI.subjectLabel = subjectLabel;
+if ischar(thisR)
+    % we load a saved target.json
+    target = jsonread(thisR);
+%     obj.targets.fwAPI = scene_target.fwAPI;
+%     obj.targets.remote = scene_target.remote;
+%     obj.targets.local = scene_target.local;
 else
-    target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
-end
-
-%% Indicate if this target is a depth map or not
-
-% This is used to sort returned targets when downloading.
-target.depthFlag = obj.renderDepth;
-target.meshFlag  = obj.renderMesh;
-
-% Add this target to the targets already stored.
-if isempty(replace),   obj.targets = cat(1,obj.targets,target);
-else
-    if isempty(obj.targets) && replace == 1, obj.targets = target;
-    elseif ~isempty(obj.targets),            obj.targets(replace) = target;
-    else, error('Error replacing a target. %d',replace);
+    %% Act
+    
+    % When we loop and create various versions of the PBRT scene file, we
+    % put all the versions into the same remote directory.  So we set up
+    % the cloud folder on the input.
+    % pbrtScene = thisR.get('input file');
+    
+    % -----Zhenyi
+    % if ~exist(pbrtScene,'file'), error('PBRT scene not found %s\n',pbrtScene);
+    % else,                       [~, sceneName] = fileparts(pbrtScene);
+    % end
+    
+    % [~, sceneName] = fileparts(pbrtScene);
+    %
+    % cloudFolder = fullfile(obj.cloudBucket,obj.namespace,sceneName);
+    
+    % The output pbrt scene file is based on the output file, and this can
+    % change.
+    pbrtScene = thisR.get('output file');
+    
+    % [~, sceneName] = fileparts(pbrtScene);
+    target.camera  = thisR.camera;
+    
+    % target.sceneInfo = sceneInfo;
+    target.local   = pbrtScene;
+    
+    if isprop(obj, 'fwAPI')
+        % If this slot exists, we are working with Flywheel storage
+        % So we add this information.
+        target.remote = obj.fwAPI.projectID;
+        target.fwAPI = obj.fwAPI;
+        if ~isempty(road)
+            target.fwList = road.fwList;
+        end
+        % The output for the job will have its own subject label.  The
+        % inputs are usually scene or camera array.  The output is
+        % 'renderings' by default.
+        target.fwAPI.subjectLabel = subjectLabel;
+    else
+        target.remote = fullfile(cloudFolder,sprintf('%s.pbrt',sceneName));
     end
-end
+    
+    %% Indicate if this target is a depth map or not
+    
+    % This is used to sort returned targets when downloading.
+    target.depthFlag = obj.renderDepth;
+    target.meshFlag  = obj.renderMesh;
+end   
+    % Add this target to the targets already stored.
+    if isempty(replace),   obj.targets = cat(1,obj.targets,target);
+    else
+        if isempty(obj.targets) && replace == 1, obj.targets = target;
+        elseif ~isempty(obj.targets),            obj.targets(replace) = target;
+        else, error('Error replacing a target. %d',replace);
+        end
+    end
 
 end
 
