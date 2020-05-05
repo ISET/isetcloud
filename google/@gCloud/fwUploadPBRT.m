@@ -23,9 +23,9 @@ function acqID = fwUploadPBRT(obj, thisR, varargin )
 %   thisR:  A render recipe.
 %
 % Optional key/value pairs
-%   render project lookup -  lookup string for the render project; must
-%     exist.  It will not be created.  By default the project is 
-%            'Graphics auto renderings'
+%   render project lookup -  lookup string for the render project; 
+%          The project must exist.  It will not be created.  By
+%          default the project is  'Graphics auto renderings'
 %   subject label     - string (default:  'scenes')
 %   session label     - 
 %   acquisition label -

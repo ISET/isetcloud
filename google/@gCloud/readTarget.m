@@ -14,11 +14,14 @@ function obj = readTarget(obj,targetName)
 % Zhenyi,2020
 %
 %%
+
+% This is the JSON file
 scene_target = jsonread(targetName);
-% I think there are all we need.
-obj.targets.fwAPI = scene_target.fwAPI;
+
+% I think these are all the slots we need
+obj.targets.fwAPI  = scene_target.fwAPI;
 obj.targets.remote = scene_target.remote;
-obj.targets.local = scene_target.local;
+obj.targets.local  = scene_target.local;
 
 
 end

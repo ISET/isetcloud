@@ -41,7 +41,7 @@ p.addRequired('thisR',@(x)(isa(x,'recipe') || exist(thisR,'file')));
 % p.addParameter('fname',@(x)(exist(fname,'file')));
 p.addParameter('road',[]);
 p.addParameter('replace',[],@(x)(x >= 1 && x <= (length(obj.targets)+1)));
-p.addParameter('subjectlabel','renderings',@ischar);
+p.addParameter('subjectlabel','',@ischar);
 
 p.parse(obj,thisR,varargin{:});
 
@@ -52,9 +52,9 @@ subjectLabel = p.Results.subjectlabel;
 if ischar(thisR)
     % we load a saved target.json
     target = jsonread(thisR);
-%     obj.targets.fwAPI = scene_target.fwAPI;
-%     obj.targets.remote = scene_target.remote;
-%     obj.targets.local = scene_target.local;
+    %     obj.targets.fwAPI = scene_target.fwAPI;
+    %     obj.targets.remote = scene_target.remote;
+    %     obj.targets.local = scene_target.local;
 else
     %% Act
     
@@ -103,15 +103,27 @@ else
     % This is used to sort returned targets when downloading.
     target.depthFlag = obj.renderDepth;
     target.meshFlag  = obj.renderMesh;
-end   
-    % Add this target to the targets already stored.
-    if isempty(replace),   obj.targets = cat(1,obj.targets,target);
-    else
-        if isempty(obj.targets) && replace == 1, obj.targets = target;
-        elseif ~isempty(obj.targets),            obj.targets(replace) = target;
-        else, error('Error replacing a target. %d',replace);
-        end
+end
+
+%% Decide which target we are changing
+if isempty(replace)
+    % Add the target to current list of targets
+    obj.targets = cat(1,obj.targets,target);
+    thisTarget = numel(obj.targets);
+else
+    % Replace an existing target
+    if isempty(obj.targets) && replace == 1, obj.targets = target;
+    elseif ~isempty(obj.targets),            obj.targets(replace) = target;
+    else, error('Error replacing a target. %d',replace);
     end
+    thisTarget = replace;
+end
+
+% If the user gave you a specific subject label, over-ride the current
+% value
+if ~isempty(subjectLabel)
+    obj.targets(thisTarget).fwAPI.subjectLabel = subjectLabel;
+end
 
 end
 
@@ -129,15 +141,15 @@ end
 %         target.fwList = road.fwList;
 %     end
 %     target.depthFlag = 1;
-% 
-% 
+%
+%
 %     % Add this target to the targets already stored.
 %     if isempty(replace)
 %         obj.targets = cat(1,obj.targets,target);
 %     else
 %         obj.targets(replace+1) = target;
 %     end
-%     
+%
 % end
 %% Add mesh file if requested
 % if(obj.renderMesh)
@@ -152,14 +164,14 @@ end
 %         target.fwList = road.fwList;
 %     end
 %     target.meshFlag = 1;
-%     
-% 
+%
+%
 %     % Add this target to the targets already stored.
 %     if isempty(replace)
 %         obj.targets = cat(1,obj.targets,target);
 %     else
 %         obj.targets(replace+1) = target;
 %     end
-%     
+%
 % end
 %}
