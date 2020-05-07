@@ -38,10 +38,10 @@ varargin = ieParamFormat(varargin);
 p = inputParser;
 p.addRequired('obj',@(x)(isa(x,'gCloud')));
 p.addRequired('thisR',@(x)(isa(x,'recipe') || exist(thisR,'file')));
-% p.addParameter('fname',@(x)(exist(fname,'file')));
 p.addParameter('road',[]);
 p.addParameter('replace',[],@(x)(x >= 1 && x <= (length(obj.targets)+1)));
 p.addParameter('subjectlabel','',@ischar);
+% p.addParameter('fname',@(x)(exist(fname,'file')));
 
 p.parse(obj,thisR,varargin{:});
 

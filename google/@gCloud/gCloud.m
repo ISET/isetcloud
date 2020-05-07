@@ -530,7 +530,9 @@ classdef gCloud < handle
             
             % Decode the json return data
             try
+                % Start with empty pod by default.
                 result = jsondecode(result_original);
+                pod = [];
                 if ~isempty(result.items)
                     pod = cell(length(result.items),1);
                     for ii=1:length(result.items)
@@ -545,7 +547,10 @@ classdef gCloud < handle
                 warning('jsondecode error. result_original\n %s',result_original);
                 fprintf('No resources found.  Returning empty pod.\n');
                 pod = [];
-            end            
+            end
+            
+            if isempty(pod), fprintf('No active pods found\n'); end
+            
         end
         
         function [result,status,cmd] = PodDescribe(obj,podname)
